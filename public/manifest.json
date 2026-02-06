@@ -1,11 +1,11 @@
 {
-  "name": "FitTrack",
-  "short_name": "FitTrack",
-  "description": "Kalorien, Training & Gewicht tracken",
+  "name": "TRÆCK",
+  "short_name": "TRÆCK",
+  "description": "Track calories, workouts & weight",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A0A0A",
-  "theme_color": "#0A0A0A",
+  "theme_color": "#3DFBB0",
   "orientation": "portrait",
   "icons": [
     {

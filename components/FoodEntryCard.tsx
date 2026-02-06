@@ -25,11 +25,11 @@ export function FoodEntryCard({ entry, onDelete, onEdit }: FoodEntryCardProps) {
             </Badge>
           </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span>{Math.round(entry.serving_grams)}g</span>
-            <span className="font-medium text-foreground">{Math.round(entry.calories)} kcal</span>
-            <span>P: {Math.round(entry.protein)}g</span>
-            <span>K: {Math.round(entry.carbs)}g <span className="text-[10px] opacity-70">(dv. Z: {Math.round(entry.sugar)}g)</span></span>
-            <span>F: {Math.round(entry.fat)}g <span className="text-[10px] opacity-70">(dv. GF: {Math.round(entry.saturated_fat)}g)</span></span>
+            <span className="font-mono">{Math.round(entry.serving_grams)}g</span>
+            <span className="font-medium font-mono text-foreground">{Math.round(entry.calories)} kcal</span>
+            <span>P: <span className="font-mono">{Math.round(entry.protein)}g</span></span>
+            <span>C: <span className="font-mono">{Math.round(entry.carbs)}g</span> <span className="text-[10px] opacity-70">(sugar: {Math.round(entry.sugar)}g)</span></span>
+            <span>F: <span className="font-mono">{Math.round(entry.fat)}g</span> <span className="text-[10px] opacity-70">(sat: {Math.round(entry.saturated_fat)}g)</span></span>
           </div>
         </div>
         <div className="flex items-center gap-0.5 shrink-0">

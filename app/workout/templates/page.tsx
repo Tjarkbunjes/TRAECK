@@ -64,7 +64,7 @@ export default function TemplatesPage() {
 
   async function handleSave() {
     if (!user || !formName.trim() || formExercises.length === 0) {
-      toast.error('Name und mindestens eine Übung benötigt');
+      toast.error('Name and at least one exercise required.');
       return;
     }
 
@@ -79,9 +79,9 @@ export default function TemplatesPage() {
         .eq('id', editingTemplate.id);
       if (error) {
         console.error('Template update error:', error);
-        toast.error(`Fehler: ${error.message}`);
+        toast.error(`Error: ${error.message}`);
       } else {
-        toast.success('Vorlage aktualisiert');
+        toast.success('Template updated.');
         cancelForm();
         loadTemplates();
       }
@@ -94,9 +94,9 @@ export default function TemplatesPage() {
       });
       if (error) {
         console.error('Template save error:', error);
-        toast.error(`Fehler: ${error.message}`);
+        toast.error(`Error: ${error.message}`);
       } else {
-        toast.success('Vorlage gespeichert');
+        toast.success('Template saved.');
         cancelForm();
         loadTemplates();
       }
@@ -106,9 +106,9 @@ export default function TemplatesPage() {
   async function deleteTemplate(id: string) {
     const { error } = await supabase.from('workout_templates').delete().eq('id', id);
     if (error) {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(`Error: ${error.message}`);
     } else {
-      toast.success('Vorlage gelöscht');
+      toast.success('Template deleted.');
       loadTemplates();
     }
   }
@@ -131,14 +131,14 @@ export default function TemplatesPage() {
         <Button variant="ghost" size="icon" asChild>
           <Link href="/workout"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
-        <h1 className="text-xl font-bold">Workout-Vorlagen</h1>
+        <h1 className="text-xl font-bold">Workout Templates</h1>
       </div>
 
       {!showForm ? (
         <>
           <Button onClick={startCreate} className="w-full">
             <Plus className="mr-2 h-4 w-4" />
-            Neue Vorlage erstellen
+            Create New Template
           </Button>
 
           <div className="space-y-2">
@@ -176,7 +176,7 @@ export default function TemplatesPage() {
             ))}
             {templates.length === 0 && (
               <p className="text-center text-muted-foreground py-4 text-sm">
-                Keine Vorlagen vorhanden.
+                No templates yet.
               </p>
             )}
           </div>
@@ -184,15 +184,15 @@ export default function TemplatesPage() {
       ) : (
         <div className="space-y-4">
           <h2 className="text-sm font-semibold text-muted-foreground">
-            {editingTemplate ? 'Vorlage bearbeiten' : 'Neue Vorlage'}
+            {editingTemplate ? 'Edit Template' : 'New Template'}
           </h2>
 
           <div className="space-y-2">
-            <Label>Vorlagen-Name</Label>
+            <Label>Template Name</Label>
             <Input
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              placeholder="z.B. Push Day"
+              placeholder="e.g. Push Day"
             />
           </div>
 
@@ -202,7 +202,7 @@ export default function TemplatesPage() {
                 <div key={i} className="flex items-center justify-between bg-muted/30 rounded-md p-2">
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-medium">{ex.exercise_name}</span>
-                    <span className="text-xs text-muted-foreground ml-2">{ex.default_sets} Sets</span>
+                    <span className="text-xs text-muted-foreground ml-2">{ex.default_sets} sets</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Input
@@ -236,18 +236,18 @@ export default function TemplatesPage() {
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full">
                 <Plus className="mr-2 h-4 w-4" />
-                Übung hinzufügen
+                Add Exercise
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Übung wählen</DialogTitle>
+                <DialogTitle>Choose Exercise</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Übung suchen..."
+                    placeholder="Search exercise..."
                     value={exerciseSearch}
                     onChange={(e) => { setExerciseSearch(e.target.value); setSelectedGroup(null); }}
                     className="pl-9"
@@ -287,10 +287,10 @@ export default function TemplatesPage() {
           <div className="flex gap-2">
             <Button onClick={handleSave} className="flex-1">
               <Save className="mr-2 h-4 w-4" />
-              {editingTemplate ? 'Aktualisieren' : 'Speichern'}
+              {editingTemplate ? 'Update' : 'Save'}
             </Button>
             <Button variant="outline" onClick={cancelForm}>
-              Abbrechen
+              Cancel
             </Button>
           </div>
         </div>

@@ -32,7 +32,7 @@ interface EditExerciseBlock {
 
 export default function EditWorkoutPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center text-muted-foreground">Laden...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center text-muted-foreground">loading...</div>}>
       <EditWorkoutPageInner />
     </Suspense>
   );
@@ -153,26 +153,21 @@ function EditWorkoutPageInner() {
     if (!workoutId) return;
     setSaving(true);
 
-    // Update workout name
     await supabase.from('workouts').update({ name: workoutName || null }).eq('id', workoutId);
 
-    // Delete removed sets
     if (deletedSetIds.length > 0) {
       await supabase.from('workout_sets').delete().in('id', deletedSetIds);
     }
 
-    // Update existing sets and insert new ones
     for (const block of exerciseBlocks) {
       for (const set of block.sets) {
         if (set.id && !set.isNew) {
-          // Update existing
           await supabase.from('workout_sets').update({
             weight_kg: set.weight_kg,
             reps: set.reps,
             set_number: set.set_number,
           }).eq('id', set.id);
         } else if (set.isNew || !set.id) {
-          // Insert new
           await supabase.from('workout_sets').insert({
             workout_id: workoutId,
             exercise_name: block.exercise_name,
@@ -185,7 +180,7 @@ function EditWorkoutPageInner() {
       }
     }
 
-    toast.success('Workout gespeichert');
+    toast.success('workout saved.');
     setSaving(false);
     router.push('/workout');
   }
@@ -197,7 +192,7 @@ function EditWorkoutPageInner() {
     : exerciseDB;
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center text-muted-foreground">Laden...</div>;
+    return <div className="flex h-screen items-center justify-center text-muted-foreground">loading...</div>;
   }
 
   return (
@@ -210,7 +205,7 @@ function EditWorkoutPageInner() {
         <Input
           value={workoutName}
           onChange={(e) => setWorkoutName(e.target.value)}
-          placeholder="Workout Name..."
+          placeholder="workout name..."
           className="h-9 border-0 bg-transparent text-lg font-bold p-0 focus-visible:ring-0"
         />
       </div>
@@ -235,7 +230,7 @@ function EditWorkoutPageInner() {
             </div>
             {block.sets.map((set, setIdx) => (
               <div key={setIdx} className="flex items-center gap-2 py-1">
-                <span className="w-6 text-center text-xs text-muted-foreground font-medium">
+                <span className="w-6 text-center text-xs text-muted-foreground font-medium font-mono">
                   {set.set_number}
                 </span>
                 <Input
@@ -265,7 +260,7 @@ function EditWorkoutPageInner() {
             ))}
             <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={() => addSet(blockIdx)}>
               <Plus className="mr-1 h-3 w-3" />
-              Set hinzufügen
+              add set
             </Button>
           </CardContent>
         </Card>
@@ -276,18 +271,18 @@ function EditWorkoutPageInner() {
         <DialogTrigger asChild>
           <Button variant="outline" className="w-full">
             <Plus className="mr-2 h-4 w-4" />
-            Übung hinzufügen
+            add exercise
           </Button>
         </DialogTrigger>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Übung wählen</DialogTitle>
+            <DialogTitle>Choose Exercise</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Übung suchen..."
+                placeholder="search exercise..."
                 value={exerciseSearch}
                 onChange={(e) => { setExerciseSearch(e.target.value); setSelectedGroup(null); }}
                 className="pl-9"
@@ -328,7 +323,7 @@ function EditWorkoutPageInner() {
       {/* Save */}
       <Button onClick={handleSave} className="w-full h-12 text-lg" disabled={saving}>
         <Save className="mr-2 h-5 w-5" />
-        {saving ? 'Wird gespeichert...' : 'Änderungen speichern'}
+        {saving ? 'saving...' : 'save changes'}
       </Button>
     </div>
   );

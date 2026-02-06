@@ -43,14 +43,14 @@ export function PWAInstall() {
   return (
     <div className="fixed top-4 left-4 right-4 z-50 mx-auto max-w-md">
       <div className="flex items-center justify-between gap-2 rounded-lg border bg-card p-3 shadow-lg">
-        <p className="text-sm">FitTrack installieren?</p>
+        <p className="text-sm">install TRÆCK?</p>
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" onClick={() => setShowInstall(false)}>
-            Später
+            later
           </Button>
           <Button size="sm" onClick={handleInstall}>
             <Download className="mr-1 h-3 w-3" />
-            Installieren
+            install
           </Button>
         </div>
       </div>

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { format, addDays, subDays } from 'date-fns';
-import { de } from 'date-fns/locale';
 import { useAuth, useFoodEntries, useProfile } from '@/lib/hooks';
 import { supabase } from '@/lib/supabase';
 import { MacroRings } from '@/components/MacroRings';
@@ -54,7 +53,7 @@ export default function FoodPage() {
   async function handleDelete(id: string) {
     const { error } = await supabase.from('food_entries').delete().eq('id', id);
     if (error) {
-      toast.error('Fehler beim Löschen');
+      toast.error('failed to delete entry.');
     } else {
       refresh();
     }
@@ -87,9 +86,9 @@ export default function FoodPage() {
     const { error } = await supabase.from('food_entries').insert(entries);
     if (error) {
       console.error('Meal add error:', error);
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(`error: ${error.message}`);
     } else {
-      toast.success(`"${meal.name}" hinzugefügt`);
+      toast.success(`"${meal.name}" added.`);
       refresh();
     }
     setAddingMeal(null);
@@ -105,7 +104,7 @@ export default function FoodPage() {
           <ChevronLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-lg font-bold">
-          {isToday ? 'Heute' : format(new Date(date + 'T12:00:00'), 'EEEE, d. MMM', { locale: de })}
+          {isToday ? 'today' : format(new Date(date + 'T12:00:00'), 'EEEE, MMM d')}
         </h1>
         <Button variant="ghost" size="icon" onClick={() => setDate(format(addDays(new Date(date + 'T12:00:00'), 1), 'yyyy-MM-dd'))}>
           <ChevronRight className="h-5 w-5" />
@@ -129,8 +128,8 @@ export default function FoodPage() {
       {/* Sugar & Saturated Fat Summary */}
       {(totals.sugar > 0 || totals.saturated_fat > 0) && (
         <div className="flex justify-center gap-6 text-xs text-muted-foreground">
-          <span>Carbs dav. Zucker: <span className="font-medium text-amber-500">{Math.round(totals.sugar)}g</span></span>
-          <span>Fett dav. ges. FS: <span className="font-medium text-rose-500">{Math.round(totals.saturated_fat)}g</span></span>
+          <span>of which sugar: <span className="font-medium font-mono text-amber-500">{Math.round(totals.sugar)}g</span></span>
+          <span>of which sat. fat: <span className="font-medium font-mono text-rose-500">{Math.round(totals.saturated_fat)}g</span></span>
         </div>
       )}
 
@@ -139,19 +138,19 @@ export default function FoodPage() {
         <Button asChild className="h-11">
           <Link href={`/food/add?date=${date}`}>
             <Plus className="mr-1.5 h-4 w-4" />
-            Hinzufügen
+            add
           </Link>
         </Button>
         <Button asChild variant="outline" className="h-11">
           <Link href={`/food/scan?date=${date}`}>
             <ScanBarcode className="mr-1.5 h-4 w-4" />
-            Scannen
+            scan
           </Link>
         </Button>
         <Button asChild variant="outline" className="h-11">
           <Link href="/food/meals">
             <UtensilsCrossed className="mr-1.5 h-4 w-4" />
-            Mahlzeiten
+            meals
           </Link>
         </Button>
       </div>
@@ -159,7 +158,7 @@ export default function FoodPage() {
       {/* Saved Meals Quick Add */}
       {meals.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2">Schnell hinzufügen</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2">quick add</h2>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {meals.map((meal) => (
               <button
@@ -169,7 +168,7 @@ export default function FoodPage() {
                 className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-accent/50 disabled:opacity-50"
               >
                 <p className="text-sm font-medium whitespace-nowrap">{meal.name}</p>
-                <p className="text-[10px] text-muted-foreground">{Math.round(meal.total_calories)} kcal</p>
+                <p className="text-[10px] text-muted-foreground font-mono">{Math.round(meal.total_calories)} kcal</p>
               </button>
             ))}
           </div>
@@ -178,10 +177,10 @@ export default function FoodPage() {
 
       {/* Meal Groups */}
       {loading ? (
-        <p className="text-center text-muted-foreground py-8">Laden...</p>
+        <p className="text-center text-muted-foreground py-8">loading...</p>
       ) : entries.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">
-          Noch keine Einträge für diesen Tag.
+          no entries for this day yet.
         </p>
       ) : (
         mealOrder.map((meal) => {
@@ -194,7 +193,7 @@ export default function FoodPage() {
                 <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                   {MEAL_LABELS[meal]}
                 </h2>
-                <span className="text-sm text-muted-foreground">{Math.round(mealCals)} kcal</span>
+                <span className="text-sm text-muted-foreground font-mono">{Math.round(mealCals)} kcal</span>
               </div>
               {mealEntries.map((entry) => (
                 <FoodEntryCard key={entry.id} entry={entry} onDelete={handleDelete} onEdit={handleEdit} />

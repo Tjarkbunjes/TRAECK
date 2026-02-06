@@ -19,7 +19,7 @@ import Link from 'next/link';
 
 export default function AddFoodPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center text-muted-foreground">Laden...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center text-muted-foreground">loading...</div>}>
       <AddFoodPageInner />
     </Suspense>
   );
@@ -168,7 +168,7 @@ function AddFoodPageInner() {
 
   async function handleSave() {
     if (!user || !foodName.trim()) {
-      toast.error('Bitte Produktname eingeben');
+      toast.error('please enter a food name.');
       return;
     }
     setSaving(true);
@@ -199,10 +199,10 @@ function AddFoodPageInner() {
 
     if (error) {
       console.error('Food save error:', error);
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(`error: ${error.message}`);
       setSaving(false);
     } else {
-      toast.success(editId ? 'Eintrag aktualisiert' : 'Eintrag gespeichert');
+      toast.success(editId ? 'entry updated.' : 'entry saved.');
       router.push('/food');
     }
   }
@@ -220,7 +220,7 @@ function AddFoodPageInner() {
       sugar_per_100g: sugarPer100,
       saturated_fat_per_100g: saturatedFatPer100,
     });
-    toast.success('Als Favorit gespeichert');
+    toast.success('saved as favorite.');
   }
 
   return (
@@ -229,13 +229,13 @@ function AddFoodPageInner() {
         <Button variant="ghost" size="icon" asChild>
           <Link href="/food"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
-        <h1 className="text-xl font-bold">{editId ? 'Eintrag bearbeiten' : 'Essen hinzufügen'}</h1>
+        <h1 className="text-xl font-bold">{editId ? 'Edit Entry' : 'Add Food'}</h1>
       </div>
 
       {/* Search */}
       <div className="flex gap-2">
         <Input
-          placeholder="Produkt suchen..."
+          placeholder="search product..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -251,7 +251,7 @@ function AddFoodPageInner() {
             <Card key={i} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => selectProduct(p)}>
               <CardContent className="p-2 text-sm">
                 <p className="font-medium truncate">{p.name}</p>
-                <p className="text-xs text-muted-foreground">{Math.round(p.calories_per_100g)} kcal/100g</p>
+                <p className="text-xs text-muted-foreground font-mono">{Math.round(p.calories_per_100g)} kcal/100g</p>
               </CardContent>
             </Card>
           ))}
@@ -263,7 +263,7 @@ function AddFoodPageInner() {
       {/* Entry Form */}
       <div className="space-y-3">
         <div className="space-y-2">
-          <Label>Mahlzeit</Label>
+          <Label>Meal</Label>
           <Select value={mealType} onValueChange={(v) => setMealType(v as MealType)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -275,19 +275,19 @@ function AddFoodPageInner() {
         </div>
 
         <div className="space-y-2">
-          <Label>Produktname</Label>
-          <Input value={foodName} onChange={(e) => setFoodName(e.target.value)} placeholder="z.B. Haferflocken" />
+          <Label>Product Name</Label>
+          <Input value={foodName} onChange={(e) => setFoodName(e.target.value)} placeholder="e.g. Oatmeal" />
         </div>
 
         <div className="space-y-2">
-          <Label>Portion (g)</Label>
+          <Label>Serving (g)</Label>
           <Input type="number" value={servingGrams} onChange={(e) => setServingGrams(Number(e.target.value))} />
         </div>
 
-        <p className="text-xs text-muted-foreground">Nährwerte pro 100g:</p>
+        <p className="text-xs text-muted-foreground">Nutrition per 100g:</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">Kalorien</Label>
+            <Label className="text-xs">Calories</Label>
             <Input type="number" value={caloriesPer100} onChange={(e) => setCaloriesPer100(Number(e.target.value))} />
           </div>
           <div className="space-y-1">
@@ -295,19 +295,19 @@ function AddFoodPageInner() {
             <Input type="number" value={proteinPer100} onChange={(e) => setProteinPer100(Number(e.target.value))} />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Kohlenhydrate (g)</Label>
+            <Label className="text-xs">Carbs (g)</Label>
             <Input type="number" value={carbsPer100} onChange={(e) => setCarbsPer100(Number(e.target.value))} />
           </div>
           <div className="space-y-1 pl-3 border-l-2 border-amber-500/30">
-            <Label className="text-xs text-muted-foreground">dav. Zucker (g)</Label>
+            <Label className="text-xs text-muted-foreground">of which sugar (g)</Label>
             <Input type="number" value={sugarPer100} onChange={(e) => setSugarPer100(Number(e.target.value))} />
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Fett (g)</Label>
+            <Label className="text-xs">Fat (g)</Label>
             <Input type="number" value={fatPer100} onChange={(e) => setFatPer100(Number(e.target.value))} />
           </div>
           <div className="space-y-1 pl-3 border-l-2 border-rose-500/30">
-            <Label className="text-xs text-muted-foreground">dav. ges. Fettsäuren (g)</Label>
+            <Label className="text-xs text-muted-foreground">of which saturated (g)</Label>
             <Input type="number" value={saturatedFatPer100} onChange={(e) => setSaturatedFatPer100(Number(e.target.value))} />
           </div>
         </div>
@@ -315,25 +315,25 @@ function AddFoodPageInner() {
         {/* Calculated values */}
         <Card className="bg-muted/30">
           <CardContent className="p-3">
-            <p className="text-sm font-medium mb-1">Berechnete Werte ({servingGrams}g):</p>
+            <p className="text-sm font-medium mb-1">Calculated ({servingGrams}g):</p>
             <div className="grid grid-cols-4 gap-2 text-center text-xs">
               <div>
-                <p className="text-lg font-bold">{Math.round(calcValue(caloriesPer100))}</p>
+                <p className="text-lg font-bold font-mono">{Math.round(calcValue(caloriesPer100))}</p>
                 <p className="text-muted-foreground">kcal</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-blue-500">{Math.round(calcValue(proteinPer100))}</p>
+                <p className="text-lg font-bold font-mono text-[#3DFBB0]">{Math.round(calcValue(proteinPer100))}</p>
                 <p className="text-muted-foreground">Protein</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-amber-500">{Math.round(calcValue(carbsPer100))}</p>
+                <p className="text-lg font-bold font-mono text-[#6CB4EE]">{Math.round(calcValue(carbsPer100))}</p>
                 <p className="text-muted-foreground">Carbs</p>
-                <p className="text-[10px] text-muted-foreground">dv. Z: {Math.round(calcValue(sugarPer100))}g</p>
+                <p className="text-[10px] text-muted-foreground">sugar: {Math.round(calcValue(sugarPer100))}g</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-rose-500">{Math.round(calcValue(fatPer100))}</p>
-                <p className="text-muted-foreground">Fett</p>
-                <p className="text-[10px] text-muted-foreground">dv. GF: {Math.round(calcValue(saturatedFatPer100))}g</p>
+                <p className="text-lg font-bold font-mono text-[#FFB224]">{Math.round(calcValue(fatPer100))}</p>
+                <p className="text-muted-foreground">Fat</p>
+                <p className="text-[10px] text-muted-foreground">sat: {Math.round(calcValue(saturatedFatPer100))}g</p>
               </div>
             </div>
           </CardContent>
@@ -342,7 +342,7 @@ function AddFoodPageInner() {
         <div className="flex gap-2">
           <Button onClick={handleSave} className="flex-1" disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
-            {saving ? 'Speichern...' : editId ? 'Aktualisieren' : 'Speichern'}
+            {saving ? 'saving...' : editId ? 'update' : 'save'}
           </Button>
           <Button onClick={handleSaveAsFavorite} variant="outline" size="icon" disabled={!foodName.trim()}>
             <Star className="h-4 w-4" />
@@ -356,14 +356,14 @@ function AddFoodPageInner() {
           <Separator />
           <div>
             <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1 mb-2">
-              <Star className="h-3 w-3" /> Favoriten
+              <Star className="h-3 w-3" /> Favorites
             </h2>
             <div className="space-y-1">
               {favorites.map((f, i) => (
                 <Card key={i} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => selectProduct(f)}>
                   <CardContent className="p-2 text-sm">
                     <p className="font-medium truncate">{f.name}</p>
-                    <p className="text-xs text-muted-foreground">{Math.round(f.calories_per_100g)} kcal/100g</p>
+                    <p className="text-xs text-muted-foreground font-mono">{Math.round(f.calories_per_100g)} kcal/100g</p>
                   </CardContent>
                 </Card>
               ))}
@@ -378,14 +378,14 @@ function AddFoodPageInner() {
           <Separator />
           <div>
             <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1 mb-2">
-              <Clock className="h-3 w-3" /> Letzte Einträge
+              <Clock className="h-3 w-3" /> Recent
             </h2>
             <div className="space-y-1">
               {recent.map((f, i) => (
                 <Card key={i} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => selectProduct(f)}>
                   <CardContent className="p-2 text-sm">
                     <p className="font-medium truncate">{f.name}</p>
-                    <p className="text-xs text-muted-foreground">{Math.round(f.calories_per_100g)} kcal/100g</p>
+                    <p className="text-xs text-muted-foreground font-mono">{Math.round(f.calories_per_100g)} kcal/100g</p>
                   </CardContent>
                 </Card>
               ))}

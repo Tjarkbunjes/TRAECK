@@ -90,7 +90,7 @@ export default function MealsPage() {
 
   async function handleSave() {
     if (!user || !mealName.trim() || items.length === 0) {
-      toast.error('Name und mindestens ein Lebensmittel benötigt');
+      toast.error('name and at least one food item required.');
       return;
     }
 
@@ -114,9 +114,9 @@ export default function MealsPage() {
 
     if (error) {
       console.error('Meal save error:', error);
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(`error: ${error.message}`);
     } else {
-      toast.success(editId ? 'Mahlzeit aktualisiert' : 'Mahlzeit gespeichert');
+      toast.success(editId ? 'meal updated.' : 'meal saved.');
       cancelEdit();
       loadMeals();
     }
@@ -124,7 +124,7 @@ export default function MealsPage() {
 
   async function deleteMeal(id: string) {
     await supabase.from('meal_templates').delete().eq('id', id);
-    toast.success('Mahlzeit gelöscht');
+    toast.success('meal deleted.');
     loadMeals();
   }
 
@@ -153,15 +153,12 @@ export default function MealsPage() {
   }
 
   function updateNewItemServing(grams: number) {
-    // Recalculate macros based on new serving size if we have per-100g base values
-    // We store absolute values for the serving, so if user changes grams,
-    // we need the per-100g base. We'll store it as absolute for the given serving.
     setNewItem(prev => ({ ...prev, serving_grams: grams }));
   }
 
   function addItemToMeal() {
     if (!newItem.food_name.trim()) {
-      toast.error('Bitte Lebensmittel-Name eingeben');
+      toast.error('please enter a food name.');
       return;
     }
     setItems(prev => [...prev, { ...newItem }]);
@@ -174,7 +171,7 @@ export default function MealsPage() {
   }
 
   if (loading) {
-    return <div className="flex h-64 items-center justify-center text-muted-foreground">Laden...</div>;
+    return <div className="flex h-64 items-center justify-center text-muted-foreground">loading...</div>;
   }
 
   return (
@@ -183,24 +180,24 @@ export default function MealsPage() {
         <Button variant="ghost" size="icon" asChild>
           <Link href="/food"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
-        <h1 className="text-xl font-bold">Mahlzeiten</h1>
+        <h1 className="text-xl font-bold">Meals</h1>
       </div>
 
       {!editing ? (
         <>
           <Button onClick={startCreate} className="w-full">
             <Plus className="mr-2 h-4 w-4" />
-            Neue Mahlzeit erstellen
+            create new meal
           </Button>
 
           {meals.length === 0 ? (
             <div className="text-center py-8">
               <UtensilsCrossed className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
               <p className="text-muted-foreground text-sm">
-                Noch keine Mahlzeiten gespeichert.
+                no meals saved yet.
               </p>
               <p className="text-muted-foreground text-xs mt-1">
-                Erstelle Mahlzeiten um sie schnell wiederverwenden zu können.
+                create meals to quickly reuse them.
               </p>
             </div>
           ) : (
@@ -219,12 +216,12 @@ export default function MealsPage() {
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {meal.items.length} Lebensmittel
+                          {meal.items.length} items
                         </p>
                         <div className="flex gap-3 text-xs text-muted-foreground mt-1">
                           <span className="font-medium text-foreground">{Math.round(meal.total_calories)} kcal</span>
                           <span>P: {Math.round(meal.total_protein)}g</span>
-                          <span>K: {Math.round(meal.total_carbs)}g</span>
+                          <span>C: {Math.round(meal.total_carbs)}g</span>
                           <span>F: {Math.round(meal.total_fat)}g</span>
                         </div>
                       </div>
@@ -257,20 +254,20 @@ export default function MealsPage() {
         /* ---- EDIT / CREATE MODE ---- */
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Mahlzeit-Name</Label>
+            <Label>Meal Name</Label>
             <Input
               value={mealName}
               onChange={(e) => setMealName(e.target.value)}
-              placeholder="z.B. Frühstück Bowl, Post-Workout Shake"
+              placeholder="e.g. Breakfast Bowl, Post-Workout Shake"
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Standard-Mahlzeit (optional)</Label>
+            <Label>Default Meal Type (optional)</Label>
             <Select value={mealType} onValueChange={setMealType}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Keine Zuordnung</SelectItem>
+                <SelectItem value="none">No assignment</SelectItem>
                 {Object.entries(MEAL_LABELS).map(([key, label]) => (
                   <SelectItem key={key} value={key}>{label}</SelectItem>
                 ))}
@@ -282,9 +279,9 @@ export default function MealsPage() {
 
           {/* Items list */}
           <div>
-            <h3 className="text-sm font-semibold mb-2">Lebensmittel ({items.length})</h3>
+            <h3 className="text-sm font-semibold mb-2">Food Items ({items.length})</h3>
             {items.length === 0 ? (
-              <p className="text-xs text-muted-foreground py-2">Noch keine Lebensmittel hinzugefügt.</p>
+              <p className="text-xs text-muted-foreground py-2">no food items added yet.</p>
             ) : (
               <div className="space-y-2">
                 {items.map((item, idx) => (
@@ -292,7 +289,7 @@ export default function MealsPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.food_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {item.serving_grams}g — {Math.round(item.calories)} kcal | P: {Math.round(item.protein)}g | K: {Math.round(item.carbs)}g | F: {Math.round(item.fat)}g
+                        {item.serving_grams}g — {Math.round(item.calories)} kcal | P: {Math.round(item.protein)}g | C: {Math.round(item.carbs)}g | F: {Math.round(item.fat)}g
                       </p>
                     </div>
                     <Button
@@ -313,23 +310,23 @@ export default function MealsPage() {
           {items.length > 0 && (
             <Card className="bg-muted/30">
               <CardContent className="p-3">
-                <p className="text-sm font-medium mb-1">Gesamt:</p>
+                <p className="text-sm font-medium mb-1">Total:</p>
                 <div className="grid grid-cols-4 gap-2 text-center text-xs">
                   <div>
-                    <p className="text-lg font-bold">{Math.round(totals.calories)}</p>
+                    <p className="text-lg font-bold font-mono">{Math.round(totals.calories)}</p>
                     <p className="text-muted-foreground">kcal</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-blue-500">{Math.round(totals.protein)}</p>
+                    <p className="text-lg font-bold font-mono text-[#3DFBB0]">{Math.round(totals.protein)}</p>
                     <p className="text-muted-foreground">Protein</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-amber-500">{Math.round(totals.carbs)}</p>
+                    <p className="text-lg font-bold font-mono text-[#6CB4EE]">{Math.round(totals.carbs)}</p>
                     <p className="text-muted-foreground">Carbs</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold text-rose-500">{Math.round(totals.fat)}</p>
-                    <p className="text-muted-foreground">Fett</p>
+                    <p className="text-lg font-bold font-mono text-[#FFB224]">{Math.round(totals.fat)}</p>
+                    <p className="text-muted-foreground">Fat</p>
                   </div>
                 </div>
               </CardContent>
@@ -341,18 +338,18 @@ export default function MealsPage() {
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full">
                 <Plus className="mr-2 h-4 w-4" />
-                Lebensmittel hinzufügen
+                add food item
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Lebensmittel hinzufügen</DialogTitle>
+                <DialogTitle>Add Food Item</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 {/* Search */}
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Produkt suchen..."
+                    placeholder="search product..."
                     value={itemSearch}
                     onChange={(e) => setItemSearch(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleItemSearch()}
@@ -385,11 +382,11 @@ export default function MealsPage() {
                   <Input
                     value={newItem.food_name}
                     onChange={(e) => setNewItem(prev => ({ ...prev, food_name: e.target.value }))}
-                    placeholder="z.B. Haferflocken"
+                    placeholder="e.g. Oats"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Portion (g)</Label>
+                  <Label>Serving (g)</Label>
                   <Input
                     type="number"
                     value={newItem.serving_grams}
@@ -398,7 +395,7 @@ export default function MealsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-xs">Kalorien</Label>
+                    <Label className="text-xs">Calories</Label>
                     <Input type="number" value={newItem.calories} onChange={(e) => setNewItem(prev => ({ ...prev, calories: Number(e.target.value) }))} />
                   </div>
                   <div className="space-y-1">
@@ -406,26 +403,26 @@ export default function MealsPage() {
                     <Input type="number" value={newItem.protein} onChange={(e) => setNewItem(prev => ({ ...prev, protein: Number(e.target.value) }))} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Kohlenhydrate (g)</Label>
+                    <Label className="text-xs">Carbs (g)</Label>
                     <Input type="number" value={newItem.carbs} onChange={(e) => setNewItem(prev => ({ ...prev, carbs: Number(e.target.value) }))} />
                   </div>
                   <div className="space-y-1 pl-3 border-l-2 border-amber-500/30">
-                    <Label className="text-xs text-muted-foreground">dav. Zucker (g)</Label>
+                    <Label className="text-xs text-muted-foreground">of which sugar (g)</Label>
                     <Input type="number" value={newItem.sugar || 0} onChange={(e) => setNewItem(prev => ({ ...prev, sugar: Number(e.target.value) }))} />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-xs">Fett (g)</Label>
+                    <Label className="text-xs">Fat (g)</Label>
                     <Input type="number" value={newItem.fat} onChange={(e) => setNewItem(prev => ({ ...prev, fat: Number(e.target.value) }))} />
                   </div>
                   <div className="space-y-1 pl-3 border-l-2 border-rose-500/30">
-                    <Label className="text-xs text-muted-foreground">dav. ges. Fettsäuren (g)</Label>
+                    <Label className="text-xs text-muted-foreground">of which saturated (g)</Label>
                     <Input type="number" value={newItem.saturated_fat || 0} onChange={(e) => setNewItem(prev => ({ ...prev, saturated_fat: Number(e.target.value) }))} />
                   </div>
                 </div>
 
                 <Button onClick={addItemToMeal} className="w-full">
                   <Plus className="mr-2 h-4 w-4" />
-                  Hinzufügen
+                  add
                 </Button>
               </div>
             </DialogContent>
@@ -436,10 +433,10 @@ export default function MealsPage() {
           <div className="flex gap-2">
             <Button onClick={handleSave} className="flex-1">
               <Save className="mr-2 h-4 w-4" />
-              {editId ? 'Aktualisieren' : 'Speichern'}
+              {editId ? 'update' : 'save'}
             </Button>
             <Button variant="outline" onClick={cancelEdit}>
-              Abbrechen
+              cancel
             </Button>
           </div>
         </div>

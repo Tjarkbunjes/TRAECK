@@ -32,7 +32,7 @@ interface ExerciseBlock {
 
 export default function ActiveWorkoutPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen items-center justify-center text-muted-foreground">Laden...</div>}>
+    <Suspense fallback={<div className="flex h-screen items-center justify-center text-muted-foreground">loading...</div>}>
       <ActiveWorkoutPageInner />
     </Suspense>
   );
@@ -139,7 +139,6 @@ function ActiveWorkoutPageInner() {
     if (!user || !workoutId) return;
     setFinishing(true);
 
-    // Save all sets
     const allSets = exerciseBlocks.flatMap(block =>
       block.sets
         .filter(s => s.completed && (s.weight_kg !== null || s.reps !== null))
@@ -156,13 +155,12 @@ function ActiveWorkoutPageInner() {
     if (allSets.length > 0) {
       const { error } = await supabase.from('workout_sets').insert(allSets);
       if (error) {
-        toast.error('Fehler beim Speichern der Sets');
+        toast.error('failed to save sets.');
         setFinishing(false);
         return;
       }
     }
 
-    // Update workout
     await supabase
       .from('workouts')
       .update({
@@ -171,7 +169,7 @@ function ActiveWorkoutPageInner() {
       })
       .eq('id', workoutId);
 
-    toast.success('Workout beendet!');
+    toast.success('workout complete.');
     router.push('/workout');
   }
 
@@ -199,7 +197,7 @@ function ActiveWorkoutPageInner() {
             <Input
               value={workoutName}
               onChange={(e) => setWorkoutName(e.target.value)}
-              placeholder="Workout Name..."
+              placeholder="workout name..."
               className="h-8 border-0 bg-transparent text-lg font-bold p-0 focus-visible:ring-0"
             />
           </div>
@@ -227,18 +225,18 @@ function ActiveWorkoutPageInner() {
         <DialogTrigger asChild>
           <Button variant="outline" className="w-full">
             <Plus className="mr-2 h-4 w-4" />
-            Übung hinzufügen
+            add exercise
           </Button>
         </DialogTrigger>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Übung wählen</DialogTitle>
+            <DialogTitle>Choose Exercise</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Übung suchen..."
+                placeholder="search exercise..."
                 value={exerciseSearch}
                 onChange={(e) => { setExerciseSearch(e.target.value); setSelectedGroup(null); }}
                 className="pl-9"
@@ -280,7 +278,7 @@ function ActiveWorkoutPageInner() {
       {exerciseBlocks.length > 0 && (
         <Button onClick={finishWorkout} className="w-full h-12 text-lg" disabled={finishing}>
           <Check className="mr-2 h-5 w-5" />
-          {finishing ? 'Wird gespeichert...' : 'Workout beenden'}
+          {finishing ? 'saving...' : 'finish workout'}
         </Button>
       )}
     </div>
@@ -313,15 +311,15 @@ function ExerciseBlockComponent({
           </Badge>
         </CardTitle>
         {lastSets.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            Letztes Mal: {lastSets.map(s => `${s.weight_kg ?? '–'}kg × ${s.reps ?? '–'}`).join(', ')}
+          <p className="text-xs text-muted-foreground font-mono">
+            last time: {lastSets.map(s => `${s.weight_kg ?? '–'}kg × ${s.reps ?? '–'}`).join(', ')}
           </p>
         )}
       </CardHeader>
       <CardContent className="space-y-1">
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase mb-1">
           <span className="w-6 text-center">Set</span>
-          {lastSets.length > 0 && <span className="w-16 text-center">Vorher</span>}
+          {lastSets.length > 0 && <span className="w-16 text-center">Previous</span>}
           <span className="w-20 text-center">kg</span>
           <span className="w-16 text-center">Reps</span>
           <span className="w-9" />
@@ -338,7 +336,7 @@ function ExerciseBlockComponent({
         ))}
         <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={onAddSet}>
           <Plus className="mr-1 h-3 w-3" />
-          Set hinzufügen
+          add set
         </Button>
       </CardContent>
     </Card>

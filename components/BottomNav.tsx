@@ -9,14 +9,13 @@ const navItems = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/food', label: 'Food', icon: Utensils },
   { href: '/workout', label: 'Workout', icon: Dumbbell },
-  { href: '/weight', label: 'Gewicht', icon: Scale },
-  { href: '/profile', label: 'Profil', icon: User },
+  { href: '/weight', label: 'Weight', icon: Scale },
+  { href: '/profile', label: 'Profile', icon: User },
 ];
 
 export function BottomNav() {
   const pathname = usePathname();
 
-  // Hide on auth pages
   if (pathname?.startsWith('/auth')) return null;
 
   return (

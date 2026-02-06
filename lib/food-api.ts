@@ -2,7 +2,7 @@ import { db } from './db';
 import type { FoodProduct } from './types';
 
 const OFF_BASE = 'https://world.openfoodfacts.org/api/v2/product';
-const OFF_HEADERS = { 'User-Agent': 'FitTrack/1.0 (fittrack-pwa)' };
+const OFF_HEADERS = { 'User-Agent': 'TRAECK/1.0 (traeck-pwa)' };
 
 export async function lookupBarcode(barcode: string): Promise<FoodProduct | null> {
   // 1. Check IndexedDB cache
@@ -28,7 +28,7 @@ export async function lookupBarcode(barcode: string): Promise<FoodProduct | null
     if (data.status === 1 && data.product) {
       const p = data.product;
       const product: FoodProduct = {
-        name: p.product_name || p.product_name_de || 'Unbekanntes Produkt',
+        name: p.product_name || p.product_name_de || 'Unknown Product',
         barcode,
         calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0,
         protein_per_100g: p.nutriments?.proteins_100g || 0,
@@ -56,7 +56,7 @@ export async function lookupBarcode(barcode: string): Promise<FoodProduct | null
       if (data2.status === 1 && data2.product) {
         const p = data2.product;
         const product: FoodProduct = {
-          name: p.product_name || p.product_name_de || 'Unbekanntes Produkt',
+          name: p.product_name || p.product_name_de || 'Unknown Product',
           barcode,
           calories_per_100g: p.nutriments?.['energy-kcal_100g'] || 0,
           protein_per_100g: p.nutriments?.proteins_100g || 0,

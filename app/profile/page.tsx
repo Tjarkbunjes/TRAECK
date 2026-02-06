@@ -60,9 +60,9 @@ export default function ProfilePage() {
 
     if (error) {
       console.error('Profile save error:', error);
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(`error: ${error.message}`);
     } else {
-      toast.success('Einstellungen gespeichert');
+      toast.success('settings saved.');
     }
     setSaving(false);
   }
@@ -73,20 +73,20 @@ export default function ProfilePage() {
   }
 
   if (authLoading || profileLoading) {
-    return <div className="flex h-screen items-center justify-center"><span className="text-muted-foreground">Laden...</span></div>;
+    return <div className="flex h-screen items-center justify-center"><span className="text-muted-foreground">loading...</span></div>;
   }
 
   return (
     <div className="mx-auto max-w-md p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Profil & Einstellungen</h1>
+      <h1 className="text-2xl font-bold">Profile & Settings</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Persönliche Daten</CardTitle>
+          <CardTitle className="text-lg">Personal Info</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>E-Mail</Label>
+            <Label>Email</Label>
             <Input value={user?.email || ''} disabled />
           </div>
           <div className="space-y-2">
@@ -94,7 +94,7 @@ export default function ProfilePage() {
             <Input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Dein Name"
+              placeholder="your name"
             />
           </div>
         </CardContent>
@@ -102,11 +102,11 @@ export default function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Tagesziele</CardTitle>
+          <CardTitle className="text-lg">Daily Goals</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Kalorien (kcal)</Label>
+            <Label>Calories (kcal)</Label>
             <Input
               type="number"
               value={calorieGoal}
@@ -131,7 +131,7 @@ export default function ProfilePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Fett (g)</Label>
+              <Label>Fat (g)</Label>
               <Input
                 type="number"
                 value={fatGoal}
@@ -144,17 +144,17 @@ export default function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Gewichtsziel</CardTitle>
+          <CardTitle className="text-lg">Weight Goal</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <Label>Zielgewicht (kg)</Label>
+            <Label>Target Weight (kg)</Label>
             <Input
               type="number"
               step="0.1"
               value={targetWeight}
               onChange={(e) => setTargetWeight(e.target.value)}
-              placeholder="z.B. 80.0"
+              placeholder="e.g. 80.0"
             />
           </div>
         </CardContent>
@@ -162,14 +162,14 @@ export default function ProfilePage() {
 
       <Button onClick={handleSave} className="w-full" disabled={saving}>
         <Save className="mr-2 h-4 w-4" />
-        {saving ? 'Speichern...' : 'Einstellungen speichern'}
+        {saving ? 'saving...' : 'save settings'}
       </Button>
 
       <Separator />
 
       <Button onClick={handleLogout} variant="outline" className="w-full text-destructive">
         <LogOut className="mr-2 h-4 w-4" />
-        Abmelden
+        sign out
       </Button>
     </div>
   );

@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Dumbbell } from 'lucide-react';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -35,7 +34,6 @@ export default function SignupPage() {
     }
 
     if (data.user) {
-      // Create profile
       await supabase.from('profiles').insert({
         id: data.user.id,
         display_name: displayName || null,
@@ -53,11 +51,8 @@ export default function SignupPage() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Dumbbell className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Registrieren</CardTitle>
-          <CardDescription>Erstelle dein FitTrack Konto</CardDescription>
+          <CardTitle className="text-2xl tracking-[0.15em]">TRÆCK</CardTitle>
+          <CardDescription>create your account.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
@@ -71,28 +66,28 @@ export default function SignupPage() {
               <Input
                 id="name"
                 type="text"
-                placeholder="Dein Name"
+                placeholder="your name"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">E-Mail</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="deine@email.de"
+                placeholder="you@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Passwort</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Mindestens 6 Zeichen"
+                placeholder="at least 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -100,12 +95,12 @@ export default function SignupPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Laden...' : 'Konto erstellen'}
+              {loading ? 'loading...' : 'create account'}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Bereits ein Konto?{' '}
+              already have an account?{' '}
               <Link href="/auth/login" className="text-primary underline">
-                Anmelden
+                sign in
               </Link>
             </p>
           </form>

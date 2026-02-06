@@ -11,7 +11,6 @@ import { MUSCLE_GROUP_LABELS } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Dumbbell, Clock, FileText, Play, Trash2, ChevronDown, ChevronUp, Pencil, Zap } from 'lucide-react';
 import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -52,7 +51,7 @@ export default function WorkoutPage() {
       .single();
 
     if (error || !data) {
-      toast.error('Fehler beim Starten');
+      toast.error('failed to start workout.');
       return;
     }
     router.push(`/workout/active?id=${data.id}`);
@@ -72,7 +71,7 @@ export default function WorkoutPage() {
       .single();
 
     if (error || !data) {
-      toast.error('Fehler beim Starten');
+      toast.error('failed to start workout.');
       return;
     }
     const exercises = encodeURIComponent(JSON.stringify(template.exercises));
@@ -105,9 +104,9 @@ export default function WorkoutPage() {
     await supabase.from('workout_sets').delete().eq('workout_id', workoutId);
     const { error } = await supabase.from('workouts').delete().eq('id', workoutId);
     if (error) {
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(`error: ${error.message}`);
     } else {
-      toast.success('Workout gelöscht');
+      toast.success('workout deleted.');
       refresh();
     }
     setDeleting(null);
@@ -129,13 +128,13 @@ export default function WorkoutPage() {
 
       <Button onClick={() => setShowStartDialog(true)} className="w-full h-14 text-lg">
         <Plus className="mr-2 h-5 w-5" />
-        Workout starten
+        start workout
       </Button>
 
       <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Workout starten</DialogTitle>
+            <DialogTitle>start workout</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
             <Button
@@ -145,13 +144,13 @@ export default function WorkoutPage() {
             >
               <Zap className="mr-3 h-5 w-5 text-primary" />
               <div>
-                <p className="font-medium">Leeres Workout</p>
-                <p className="text-xs text-muted-foreground">Übungen individuell hinzufügen</p>
+                <p className="font-medium">Empty Workout</p>
+                <p className="text-xs text-muted-foreground">add exercises individually</p>
               </div>
             </Button>
             {templates.length > 0 && (
               <>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider pt-2 pb-1">Vorlagen</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider pt-2 pb-1">Templates</div>
                 {templates.map((t) => (
                   <Button
                     key={t.id}
@@ -162,7 +161,7 @@ export default function WorkoutPage() {
                     <Play className="mr-3 h-5 w-5 text-primary" />
                     <div>
                       <p className="font-medium">{t.name}</p>
-                      <p className="text-xs text-muted-foreground">{t.exercises.length} Übungen</p>
+                      <p className="text-xs text-muted-foreground">{t.exercises.length} exercises</p>
                     </div>
                   </Button>
                 ))}
@@ -174,16 +173,16 @@ export default function WorkoutPage() {
 
       <Tabs defaultValue="history">
         <TabsList className="w-full">
-          <TabsTrigger value="history" className="flex-1">Verlauf</TabsTrigger>
-          <TabsTrigger value="templates" className="flex-1">Vorlagen</TabsTrigger>
+          <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
+          <TabsTrigger value="templates" className="flex-1">Templates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="history" className="space-y-2 mt-4">
           {loading ? (
-            <p className="text-center text-muted-foreground py-8">Laden...</p>
+            <p className="text-center text-muted-foreground py-8">loading...</p>
           ) : workouts.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
-              Noch keine Workouts aufgezeichnet.
+              no workouts recorded yet.
             </p>
           ) : (
             workouts.map((w) => {
@@ -201,7 +200,7 @@ export default function WorkoutPage() {
                       >
                         <p className="font-medium">{w.name || 'Workout'}</p>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(w.date + 'T12:00:00'), 'EEEE, d. MMM yyyy', { locale: de })}
+                          {format(new Date(w.date + 'T12:00:00'), 'EEEE, MMM d, yyyy')}
                         </p>
                       </button>
                       <div className="flex items-center gap-1">
@@ -243,7 +242,7 @@ export default function WorkoutPage() {
                     {isExpanded && (
                       <div className="mt-3 pt-3 border-t border-border space-y-3">
                         {sets.length === 0 ? (
-                          <p className="text-xs text-muted-foreground">Keine Sets aufgezeichnet.</p>
+                          <p className="text-xs text-muted-foreground">no sets recorded.</p>
                         ) : (
                           Object.entries(exerciseGroups).map(([exerciseName, exSets]) => (
                             <div key={exerciseName}>
@@ -281,7 +280,7 @@ export default function WorkoutPage() {
           <Button variant="outline" className="w-full" asChild>
             <Link href="/workout/templates">
               <FileText className="mr-2 h-4 w-4" />
-              Vorlagen verwalten
+              manage templates
             </Link>
           </Button>
           {templates.map((t) => (
@@ -290,7 +289,7 @@ export default function WorkoutPage() {
                 <div>
                   <p className="font-medium">{t.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {t.exercises.length} Übungen
+                    {t.exercises.length} exercises
                   </p>
                 </div>
                 <Play className="h-4 w-4 text-primary" />
@@ -299,7 +298,7 @@ export default function WorkoutPage() {
           ))}
           {templates.length === 0 && (
             <p className="text-center text-muted-foreground py-4 text-sm">
-              Keine Vorlagen vorhanden.
+              no templates yet.
             </p>
           )}
         </TabsContent>

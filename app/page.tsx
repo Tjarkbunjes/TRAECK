@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
-import { de } from 'date-fns/locale';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile } from '@/lib/hooks';
 import { MacroRings } from '@/components/MacroRings';
@@ -94,18 +93,18 @@ export default function HomePage() {
   const lastWorkout = workouts.length > 0 ? workouts[0] : null;
 
   if (authLoading) {
-    return <div className="flex h-screen items-center justify-center"><span className="text-muted-foreground">Laden...</span></div>;
+    return <div className="flex h-screen items-center justify-center"><span className="text-muted-foreground">loading...</span></div>;
   }
 
   return (
     <div className="mx-auto max-w-md p-4 space-y-4">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">
-          {profile?.display_name ? `Hey, ${profile.display_name}` : 'FitTrack'}
+        <h1 className="text-2xl font-bold tracking-[0.15em]">
+          {profile?.display_name ? `hey, ${profile.display_name}` : 'TRÆCK'}
         </h1>
         <p className="text-sm text-muted-foreground">
-          {format(new Date(), 'EEEE, d. MMMM yyyy', { locale: de })}
+          {format(new Date(), 'EEEE, MMMM d, yyyy')}
         </p>
       </div>
 
@@ -113,7 +112,7 @@ export default function HomePage() {
       {profile && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Heute</CardTitle>
+            <CardTitle className="text-lg">today</CardTitle>
           </CardHeader>
           <CardContent>
             <MacroRings
@@ -136,31 +135,31 @@ export default function HomePage() {
         <Button asChild className="h-14" variant="outline">
           <Link href="/food/add">
             <Utensils className="mr-2 h-5 w-5" />
-            Essen loggen
+            log food
           </Link>
         </Button>
         <Button asChild className="h-14" variant="outline">
           <Link href="/workout">
             <Dumbbell className="mr-2 h-5 w-5" />
-            Workout
+            workout
           </Link>
         </Button>
         <Button asChild className="h-14" variant="outline">
           <Link href="/weight">
             <Scale className="mr-2 h-5 w-5" />
-            Gewicht
+            weight
           </Link>
         </Button>
         <Button className="h-14 flex-col gap-0" variant="outline" disabled>
           <Users className="h-5 w-5" />
-          <span>Freunde</span>
-          <span className="text-[9px] text-muted-foreground">Coming soon</span>
+          <span>friends</span>
+          <span className="text-[9px] text-muted-foreground">coming soon</span>
         </Button>
       </div>
 
       {/* Weekly Consistency */}
       {(() => {
-        const dayLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+        const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         const foodDays = weeklyFood.size;
         return (
           <Card>
@@ -169,9 +168,9 @@ export default function HomePage() {
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm font-medium flex items-center gap-1.5">
                     <TrendingUp className="h-4 w-4 text-primary" />
-                    Ernährung
+                    nutrition
                   </span>
-                  <span className="text-xs text-muted-foreground">{foodDays}/7 Tage</span>
+                  <span className="text-xs text-muted-foreground">{foodDays}/7 days</span>
                 </div>
                 <div className="flex gap-1.5">
                   {dayLabels.map((label, i) => {
@@ -180,7 +179,7 @@ export default function HomePage() {
                       <div key={i} className="flex-1 text-center space-y-1">
                         <div className={`h-7 rounded-full flex items-center justify-center ${kcal ? 'bg-primary' : 'bg-muted/20'}`}>
                           {kcal ? (
-                            <span className="text-xs font-extrabold text-white">{Math.round(kcal)}</span>
+                            <span className="text-xs font-extrabold text-white font-mono">{Math.round(kcal)}</span>
                           ) : null}
                         </div>
                         <span className="text-[9px] text-muted-foreground">{label}</span>
@@ -193,9 +192,9 @@ export default function HomePage() {
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm font-medium flex items-center gap-1.5">
                     <Dumbbell className="h-4 w-4 text-primary" />
-                    Training
+                    training
                   </span>
-                  <span className="text-xs text-muted-foreground">{weeklyWorkouts.size}x diese Woche</span>
+                  <span className="text-xs text-muted-foreground">{weeklyWorkouts.size}x this week</span>
                 </div>
                 <div className="flex gap-1.5">
                   {dayLabels.map((label, i) => {

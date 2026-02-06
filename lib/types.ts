@@ -132,18 +132,18 @@ export interface MealTemplateItem {
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 export const MEAL_LABELS: Record<MealType, string> = {
-  breakfast: 'Frühstück',
-  lunch: 'Mittagessen',
-  dinner: 'Abendessen',
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
   snack: 'Snack',
 };
 
 export const MUSCLE_GROUP_LABELS: Record<string, string> = {
-  chest: 'Brust',
-  back: 'Rücken',
-  shoulders: 'Schultern',
-  legs: 'Beine',
-  arms: 'Arme',
+  chest: 'Chest',
+  back: 'Back',
+  shoulders: 'Shoulders',
+  legs: 'Legs',
+  arms: 'Arms',
   core: 'Core',
   cardio: 'Cardio',
 };

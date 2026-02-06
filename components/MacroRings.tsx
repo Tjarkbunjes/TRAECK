@@ -64,20 +64,20 @@ export function MacroRings({
           />
         </svg>
         <div className="absolute flex flex-col items-center">
-          <span className={cn('font-bold', size === 'lg' ? 'text-2xl' : 'text-lg')}>
+          <span className={cn('font-bold font-mono', size === 'lg' ? 'text-2xl' : 'text-lg')}>
             {Math.round(remaining)}
           </span>
           <span className={cn('text-muted-foreground', size === 'lg' ? 'text-xs' : 'text-[10px]')}>
-            übrig
+            left
           </span>
         </div>
       </div>
 
       {/* Macro Bars */}
       <div className="flex-1 space-y-3">
-        <MacroBar label="Protein" value={protein} goal={proteinGoal} color="bg-blue-500" unit="g" />
-        <MacroBar label="Carbs" value={carbs} goal={carbsGoal} color="bg-amber-500" unit="g" />
-        <MacroBar label="Fett" value={fat} goal={fatGoal} color="bg-rose-500" unit="g" />
+        <MacroBar label="Protein" value={protein} goal={proteinGoal} color="bg-[#3DFBB0]" unit="g" />
+        <MacroBar label="Carbs" value={carbs} goal={carbsGoal} color="bg-[#6CB4EE]" unit="g" />
+        <MacroBar label="Fat" value={fat} goal={fatGoal} color="bg-[#FFB224]" unit="g" />
       </div>
     </div>
   );
@@ -90,7 +90,7 @@ function MacroBar({ label, value, goal, color, unit }: { label: string; value: n
       <div className="flex justify-between text-xs mb-1">
         <span className="text-muted-foreground">{label}</span>
         <span>
-          <span className="font-medium">{Math.round(value)}</span>
+          <span className="font-medium font-mono">{Math.round(value)}</span>
           <span className="text-muted-foreground">/{goal}{unit}</span>
         </span>
       </div>

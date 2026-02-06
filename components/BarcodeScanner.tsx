@@ -60,7 +60,7 @@ export function BarcodeScanner({ onScan, scanning }: BarcodeScannerProps) {
       } catch (err) {
         if (mounted) {
           setError(
-            'Kamera-Zugriff nicht möglich. Bitte erlaube den Kamera-Zugriff in den Browser-Einstellungen.'
+            'camera access denied. please allow camera access in your browser settings.'
           );
         }
       }

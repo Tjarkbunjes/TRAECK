@@ -27,7 +27,7 @@ export default function WeightPage() {
 
   async function handleSave() {
     if (!user || !weight) {
-      toast.error('Bitte Gewicht eingeben');
+      toast.error('please enter your weight.');
       return;
     }
     setSaving(true);
@@ -45,9 +45,9 @@ export default function WeightPage() {
 
     if (error) {
       console.error('Weight save error:', error);
-      toast.error(`Fehler: ${error.message}`);
+      toast.error(`error: ${error.message}`);
     } else {
-      toast.success('Gewicht gespeichert');
+      toast.success('weight saved.');
       setWeight('');
       setBodyFat('');
       refresh();
@@ -67,19 +67,19 @@ export default function WeightPage() {
 
   return (
     <div className="mx-auto max-w-md p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Gewicht</h1>
+      <h1 className="text-2xl font-bold">Weight</h1>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-2">
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold">{latest?.weight_kg || '–'}</p>
-            <p className="text-xs text-muted-foreground">Aktuell (kg)</p>
+            <p className="text-2xl font-bold font-mono">{latest?.weight_kg || '–'}</p>
+            <p className="text-xs text-muted-foreground">current (kg)</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold flex items-center justify-center gap-1">
+            <p className="text-2xl font-bold font-mono flex items-center justify-center gap-1">
               {diff !== null ? (
                 <>
                   {diff > 0 ? <TrendingUp className="h-4 w-4 text-rose-500" /> : diff < 0 ? <TrendingDown className="h-4 w-4 text-green-500" /> : <Minus className="h-4 w-4" />}
@@ -87,13 +87,13 @@ export default function WeightPage() {
                 </>
               ) : '–'}
             </p>
-            <p className="text-xs text-muted-foreground">Änderung (kg)</p>
+            <p className="text-xs text-muted-foreground">change (kg)</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold">{avg7 || '–'}</p>
-            <p className="text-xs text-muted-foreground">Ø 7 Tage</p>
+            <p className="text-2xl font-bold font-mono">{avg7 || '–'}</p>
+            <p className="text-xs text-muted-foreground">7d avg</p>
           </CardContent>
         </Card>
       </div>
@@ -102,20 +102,20 @@ export default function WeightPage() {
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Verlauf</CardTitle>
+            <CardTitle className="text-lg">History</CardTitle>
             <Tabs value={range} onValueChange={(v) => setRange(v as TimeRange)}>
               <TabsList className="h-8">
-                <TabsTrigger value="7" className="text-xs px-2 h-6">7T</TabsTrigger>
-                <TabsTrigger value="30" className="text-xs px-2 h-6">30T</TabsTrigger>
-                <TabsTrigger value="90" className="text-xs px-2 h-6">90T</TabsTrigger>
-                <TabsTrigger value="365" className="text-xs px-2 h-6">1J</TabsTrigger>
+                <TabsTrigger value="7" className="text-xs px-2 h-6">7d</TabsTrigger>
+                <TabsTrigger value="30" className="text-xs px-2 h-6">30d</TabsTrigger>
+                <TabsTrigger value="90" className="text-xs px-2 h-6">90d</TabsTrigger>
+                <TabsTrigger value="365" className="text-xs px-2 h-6">1y</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="h-[250px] flex items-center justify-center text-muted-foreground">Laden...</div>
+            <div className="h-[250px] flex items-center justify-center text-muted-foreground">loading...</div>
           ) : (
             <WeightChart entries={entries} targetWeight={profile?.target_weight} />
           )}
@@ -125,26 +125,26 @@ export default function WeightPage() {
       {/* Add Weight */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Gewicht eintragen</CardTitle>
+          <CardTitle className="text-lg">Log Weight</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Gewicht (kg)</Label>
+              <Label>Weight (kg)</Label>
               <Input
                 type="number"
                 step="0.1"
-                placeholder="z.B. 82.5"
+                placeholder="e.g. 82.5"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label>Körperfett % (optional)</Label>
+              <Label>Body Fat % (optional)</Label>
               <Input
                 type="number"
                 step="0.1"
-                placeholder="z.B. 15.0"
+                placeholder="e.g. 15.0"
                 value={bodyFat}
                 onChange={(e) => setBodyFat(e.target.value)}
               />
@@ -152,7 +152,7 @@ export default function WeightPage() {
           </div>
           <Button onClick={handleSave} className="w-full" disabled={saving}>
             <Plus className="mr-2 h-4 w-4" />
-            {saving ? 'Speichern...' : 'Heute speichern'}
+            {saving ? 'saving...' : 'save today'}
           </Button>
         </CardContent>
       </Card>
