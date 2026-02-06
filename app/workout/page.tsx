@@ -1,0 +1,309 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth, useWorkouts } from '@/lib/hooks';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MUSCLE_GROUP_LABELS } from '@/lib/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, Dumbbell, Clock, FileText, Play, Trash2, ChevronDown, ChevronUp, Pencil, Zap } from 'lucide-react';
+import { format } from 'date-fns';
+import { de } from 'date-fns/locale';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import type { WorkoutTemplate, WorkoutSet } from '@/lib/types';
+
+export default function WorkoutPage() {
+  const { user } = useAuth();
+  const { workouts, loading, refresh } = useWorkouts();
+  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
+  const [workoutSets, setWorkoutSets] = useState<Record<string, WorkoutSet[]>>({});
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [showStartDialog, setShowStartDialog] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('workout_templates')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (data) setTemplates(data);
+      });
+  }, [user]);
+
+  async function startNewWorkout() {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('workouts')
+      .insert({
+        user_id: user.id,
+        date: format(new Date(), 'yyyy-MM-dd'),
+        started_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      toast.error('Fehler beim Starten');
+      return;
+    }
+    router.push(`/workout/active?id=${data.id}`);
+  }
+
+  async function startFromTemplate(template: WorkoutTemplate) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('workouts')
+      .insert({
+        user_id: user.id,
+        date: format(new Date(), 'yyyy-MM-dd'),
+        name: template.name,
+        started_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      toast.error('Fehler beim Starten');
+      return;
+    }
+    const exercises = encodeURIComponent(JSON.stringify(template.exercises));
+    router.push(`/workout/active?id=${data.id}&template=${exercises}`);
+  }
+
+  async function toggleWorkoutDetails(workoutId: string) {
+    if (expandedWorkout === workoutId) {
+      setExpandedWorkout(null);
+      return;
+    }
+    setExpandedWorkout(workoutId);
+
+    if (!workoutSets[workoutId]) {
+      const { data } = await supabase
+        .from('workout_sets')
+        .select('*')
+        .eq('workout_id', workoutId)
+        .order('exercise_name')
+        .order('set_number');
+      if (data) {
+        setWorkoutSets(prev => ({ ...prev, [workoutId]: data }));
+      }
+    }
+  }
+
+  async function deleteWorkout(workoutId: string) {
+    setDeleting(workoutId);
+    // Delete sets first, then workout
+    await supabase.from('workout_sets').delete().eq('workout_id', workoutId);
+    const { error } = await supabase.from('workouts').delete().eq('id', workoutId);
+    if (error) {
+      toast.error(`Fehler: ${error.message}`);
+    } else {
+      toast.success('Workout gelöscht');
+      refresh();
+    }
+    setDeleting(null);
+  }
+
+  // Group sets by exercise for display
+  function groupSetsByExercise(sets: WorkoutSet[]) {
+    const groups: Record<string, WorkoutSet[]> = {};
+    for (const s of sets) {
+      if (!groups[s.exercise_name]) groups[s.exercise_name] = [];
+      groups[s.exercise_name].push(s);
+    }
+    return groups;
+  }
+
+  return (
+    <div className="mx-auto max-w-md p-4 space-y-4">
+      <h1 className="text-2xl font-bold">Workout</h1>
+
+      <Button onClick={() => setShowStartDialog(true)} className="w-full h-14 text-lg">
+        <Plus className="mr-2 h-5 w-5" />
+        Workout starten
+      </Button>
+
+      <Dialog open={showStartDialog} onOpenChange={setShowStartDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Workout starten</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full h-12 justify-start text-left"
+              onClick={() => { setShowStartDialog(false); startNewWorkout(); }}
+            >
+              <Zap className="mr-3 h-5 w-5 text-primary" />
+              <div>
+                <p className="font-medium">Leeres Workout</p>
+                <p className="text-xs text-muted-foreground">Übungen individuell hinzufügen</p>
+              </div>
+            </Button>
+            {templates.length > 0 && (
+              <>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider pt-2 pb-1">Vorlagen</div>
+                {templates.map((t) => (
+                  <Button
+                    key={t.id}
+                    variant="outline"
+                    className="w-full h-12 justify-start text-left"
+                    onClick={() => { setShowStartDialog(false); startFromTemplate(t); }}
+                  >
+                    <Play className="mr-3 h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium">{t.name}</p>
+                      <p className="text-xs text-muted-foreground">{t.exercises.length} Übungen</p>
+                    </div>
+                  </Button>
+                ))}
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Tabs defaultValue="history">
+        <TabsList className="w-full">
+          <TabsTrigger value="history" className="flex-1">Verlauf</TabsTrigger>
+          <TabsTrigger value="templates" className="flex-1">Vorlagen</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="history" className="space-y-2 mt-4">
+          {loading ? (
+            <p className="text-center text-muted-foreground py-8">Laden...</p>
+          ) : workouts.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              Noch keine Workouts aufgezeichnet.
+            </p>
+          ) : (
+            workouts.map((w) => {
+              const isExpanded = expandedWorkout === w.id;
+              const sets = workoutSets[w.id] || [];
+              const exerciseGroups = groupSetsByExercise(sets);
+
+              return (
+                <Card key={w.id}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <button
+                        className="flex-1 text-left"
+                        onClick={() => toggleWorkoutDetails(w.id)}
+                      >
+                        <p className="font-medium">{w.name || 'Workout'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(w.date + 'T12:00:00'), 'EEEE, d. MMM yyyy', { locale: de })}
+                        </p>
+                      </button>
+                      <div className="flex items-center gap-1">
+                        {w.finished_at && w.started_at && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Clock className="mr-1 h-3 w-3" />
+                            {Math.round((new Date(w.finished_at).getTime() - new Date(w.started_at).getTime()) / 60000)} min
+                          </Badge>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => toggleWorkoutDetails(w.id)}
+                        >
+                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
+                          onClick={() => router.push(`/workout/edit?id=${w.id}`)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => deleteWorkout(w.id)}
+                          disabled={deleting === w.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Expanded Details */}
+                    {isExpanded && (
+                      <div className="mt-3 pt-3 border-t border-border space-y-3">
+                        {sets.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Keine Sets aufgezeichnet.</p>
+                        ) : (
+                          Object.entries(exerciseGroups).map(([exerciseName, exSets]) => (
+                            <div key={exerciseName}>
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-sm font-medium">{exerciseName}</p>
+                                {exSets[0]?.muscle_group && (
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    {MUSCLE_GROUP_LABELS[exSets[0].muscle_group] || exSets[0].muscle_group}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="space-y-0.5">
+                                {exSets.map((s) => (
+                                  <div key={s.id} className="flex items-center gap-3 text-xs text-muted-foreground">
+                                    <span className="w-8">Set {s.set_number}</span>
+                                    <span>{s.weight_kg ?? '–'} kg</span>
+                                    <span>× {s.reps ?? '–'}</span>
+                                    {s.rpe && <span className="text-[10px]">RPE {s.rpe}</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
+        </TabsContent>
+
+        <TabsContent value="templates" className="space-y-2 mt-4">
+          <Button variant="outline" className="w-full" asChild>
+            <Link href="/workout/templates">
+              <FileText className="mr-2 h-4 w-4" />
+              Vorlagen verwalten
+            </Link>
+          </Button>
+          {templates.map((t) => (
+            <Card key={t.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => startFromTemplate(t)}>
+              <CardContent className="p-3 flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.exercises.length} Übungen
+                  </p>
+                </div>
+                <Play className="h-4 w-4 text-primary" />
+              </CardContent>
+            </Card>
+          ))}
+          {templates.length === 0 && (
+            <p className="text-center text-muted-foreground py-4 text-sm">
+              Keine Vorlagen vorhanden.
+            </p>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

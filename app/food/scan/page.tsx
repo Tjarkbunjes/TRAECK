@@ -1,0 +1,155 @@
+'use client';
+
+import { Suspense, useState, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { BarcodeScanner } from '@/components/BarcodeScanner';
+import { lookupBarcode } from '@/lib/food-api';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, ScanBarcode, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import type { FoodProduct } from '@/lib/types';
+import Link from 'next/link';
+
+export default function ScanPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center text-muted-foreground">Laden...</div>}>
+      <ScanPageInner />
+    </Suspense>
+  );
+}
+
+function ScanPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const date = searchParams.get('date') || format(new Date(), 'yyyy-MM-dd');
+
+  const [scanning, setScanning] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [product, setProduct] = useState<FoodProduct | null>(null);
+  const [scannedBarcode, setScannedBarcode] = useState<string | null>(null);
+
+  const handleScan = useCallback(async (barcode: string) => {
+    if (loading) return;
+    setScanning(false);
+    setLoading(true);
+    setScannedBarcode(barcode);
+
+    const result = await lookupBarcode(barcode);
+
+    if (result) {
+      setProduct(result);
+      toast.success(`${result.name} gefunden!`);
+    } else {
+      toast.error('Produkt nicht gefunden');
+      setProduct(null);
+    }
+    setLoading(false);
+  }, [loading]);
+
+  function handleUseProduct() {
+    if (!product) return;
+    const prefill = encodeURIComponent(JSON.stringify(product));
+    router.push(`/food/add?date=${date}&prefill=${prefill}`);
+  }
+
+  function handleManualEntry() {
+    const data = scannedBarcode ? JSON.stringify({ barcode: scannedBarcode, name: '' }) : '';
+    const prefill = data ? `&prefill=${encodeURIComponent(data)}` : '';
+    router.push(`/food/add?date=${date}${prefill}`);
+  }
+
+  function handleRescan() {
+    setProduct(null);
+    setScannedBarcode(null);
+    setScanning(true);
+  }
+
+  return (
+    <div className="mx-auto max-w-md p-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" asChild>
+          <Link href="/food"><ArrowLeft className="h-5 w-5" /></Link>
+        </Button>
+        <h1 className="text-xl font-bold">Barcode scannen</h1>
+      </div>
+
+      {scanning && <BarcodeScanner onScan={handleScan} scanning={scanning} />}
+
+      {loading && (
+        <div className="flex flex-col items-center gap-3 py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Produkt wird gesucht...</p>
+          <p className="text-xs text-muted-foreground">Barcode: {scannedBarcode}</p>
+        </div>
+      )}
+
+      {!scanning && !loading && product && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">{product.name}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-xs text-muted-foreground">Nährwerte pro 100g:</p>
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div>
+                <p className="text-xl font-bold">{Math.round(product.calories_per_100g)}</p>
+                <p className="text-xs text-muted-foreground">kcal</p>
+              </div>
+              <div>
+                <p className="text-xl font-bold text-blue-500">{Math.round(product.protein_per_100g)}</p>
+                <p className="text-xs text-muted-foreground">Protein</p>
+              </div>
+              <div>
+                <p className="text-xl font-bold text-amber-500">{Math.round(product.carbs_per_100g)}</p>
+                <p className="text-xs text-muted-foreground">Carbs</p>
+                <p className="text-[10px] text-muted-foreground">dv. Z: {Math.round(product.sugar_per_100g || 0)}g</p>
+              </div>
+              <div>
+                <p className="text-xl font-bold text-rose-500">{Math.round(product.fat_per_100g)}</p>
+                <p className="text-xs text-muted-foreground">Fett</p>
+                <p className="text-[10px] text-muted-foreground">dv. GF: {Math.round(product.saturated_fat_per_100g || 0)}g</p>
+              </div>
+            </div>
+            {product.serving_size && (
+              <p className="text-xs text-muted-foreground">Portionsgröße: {product.serving_size}</p>
+            )}
+            <div className="flex gap-2 pt-2">
+              <Button onClick={handleUseProduct} className="flex-1">
+                Übernehmen
+              </Button>
+              <Button onClick={handleRescan} variant="outline" className="flex-1">
+                Nochmal scannen
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!scanning && !loading && !product && scannedBarcode && (
+        <Card>
+          <CardContent className="p-4 text-center space-y-3">
+            <p className="text-muted-foreground">
+              Kein Produkt für Barcode <span className="font-mono">{scannedBarcode}</span> gefunden.
+            </p>
+            <div className="flex gap-2">
+              <Button onClick={handleManualEntry} className="flex-1">
+                Manuell eingeben
+              </Button>
+              <Button onClick={handleRescan} variant="outline" className="flex-1">
+                Nochmal scannen
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!scanning && !loading && (
+        <p className="text-center text-xs text-muted-foreground">
+          Daten von Open Food Facts
+        </p>
+      )}
+    </div>
+  );
+}

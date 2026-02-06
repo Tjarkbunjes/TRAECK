@@ -1,65 +1,222 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { format, startOfWeek, addDays } from 'date-fns';
+import { de } from 'date-fns/locale';
+import { supabase } from '@/lib/supabase';
+import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile } from '@/lib/hooks';
+import { MacroRings } from '@/components/MacroRings';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dumbbell, Scale, Utensils, TrendingUp, Users } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+export default function HomePage() {
+  const { user, loading: authLoading } = useAuth();
+  const { profile } = useProfile();
+  const router = useRouter();
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const { entries: todayEntries } = useFoodEntries(today);
+  const { entries: weightEntries } = useWeightEntries(30);
+  const { workouts } = useWorkouts();
+  const [weeklyFood, setWeeklyFood] = useState<Map<number, number>>(new Map());
+  const [weeklyWorkouts, setWeeklyWorkouts] = useState<Map<number, string>>(new Map());
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/auth/login');
+    }
+  }, [user, authLoading, router]);
+
+  // Calculate weekly consistency
+  useEffect(() => {
+    if (!user) return;
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const weekEnd = addDays(weekStart, 6);
+    const dates: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      dates.push(format(addDays(weekStart, i), 'yyyy-MM-dd'));
+    }
+
+    function dateToDayIdx(dateStr: string) {
+      const d = new Date(dateStr + 'T12:00:00');
+      return (d.getDay() + 6) % 7; // Mon=0 ... Sun=6
+    }
+
+    // Food: calories per day
+    supabase
+      .from('food_entries')
+      .select('date, calories')
+      .eq('user_id', user.id)
+      .in('date', dates)
+      .then(({ data }) => {
+        if (data) {
+          const map = new Map<number, number>();
+          for (const e of data) {
+            const idx = dateToDayIdx(e.date);
+            map.set(idx, (map.get(idx) || 0) + e.calories);
+          }
+          setWeeklyFood(map);
+        }
+      });
+
+    // Workouts per day
+    supabase
+      .from('workouts')
+      .select('date, name')
+      .eq('user_id', user.id)
+      .gte('date', format(weekStart, 'yyyy-MM-dd'))
+      .lte('date', format(weekEnd, 'yyyy-MM-dd'))
+      .order('date')
+      .then(({ data }) => {
+        if (data) {
+          const map = new Map<number, string>();
+          for (const w of data) {
+            map.set(dateToDayIdx(w.date), w.name || 'Gym');
+          }
+          setWeeklyWorkouts(map);
+        }
+      });
+  }, [user]);
+
+  const totals = todayEntries.reduce(
+    (acc, e) => ({
+      calories: acc.calories + e.calories,
+      protein: acc.protein + e.protein,
+      carbs: acc.carbs + e.carbs,
+      fat: acc.fat + e.fat,
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  );
+
+  const latestWeight = weightEntries.length > 0 ? weightEntries[weightEntries.length - 1] : null;
+  const lastWorkout = workouts.length > 0 ? workouts[0] : null;
+
+  if (authLoading) {
+    return <div className="flex h-screen items-center justify-center"><span className="text-muted-foreground">Laden...</span></div>;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="mx-auto max-w-md p-4 space-y-4">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold">
+          {profile?.display_name ? `Hey, ${profile.display_name}` : 'FitTrack'}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {format(new Date(), 'EEEE, d. MMMM yyyy', { locale: de })}
+        </p>
+      </div>
+
+      {/* Calorie Overview */}
+      {profile && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Heute</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MacroRings
+              calories={totals.calories}
+              calorieGoal={profile.calorie_goal}
+              protein={totals.protein}
+              proteinGoal={profile.protein_goal}
+              carbs={totals.carbs}
+              carbsGoal={profile.carbs_goal}
+              fat={totals.fat}
+              fatGoal={profile.fat_goal}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+          </CardContent>
+        </Card>
+      )}
+
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button asChild className="h-14" variant="outline">
+          <Link href="/food/add">
+            <Utensils className="mr-2 h-5 w-5" />
+            Essen loggen
+          </Link>
+        </Button>
+        <Button asChild className="h-14" variant="outline">
+          <Link href="/workout">
+            <Dumbbell className="mr-2 h-5 w-5" />
+            Workout
+          </Link>
+        </Button>
+        <Button asChild className="h-14" variant="outline">
+          <Link href="/weight">
+            <Scale className="mr-2 h-5 w-5" />
+            Gewicht
+          </Link>
+        </Button>
+        <Button className="h-14 flex-col gap-0" variant="outline" disabled>
+          <Users className="h-5 w-5" />
+          <span>Freunde</span>
+          <span className="text-[9px] text-muted-foreground">Coming soon</span>
+        </Button>
+      </div>
+
+      {/* Weekly Consistency */}
+      {(() => {
+        const dayLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+        const foodDays = weeklyFood.size;
+        return (
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm font-medium flex items-center gap-1.5">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    Ernährung
+                  </span>
+                  <span className="text-xs text-muted-foreground">{foodDays}/7 Tage</span>
+                </div>
+                <div className="flex gap-1.5">
+                  {dayLabels.map((label, i) => {
+                    const kcal = weeklyFood.get(i);
+                    return (
+                      <div key={i} className="flex-1 text-center space-y-1">
+                        <div className={`h-7 rounded-full flex items-center justify-center ${kcal ? 'bg-primary' : 'bg-muted/20'}`}>
+                          {kcal ? (
+                            <span className="text-xs font-extrabold text-white">{Math.round(kcal)}</span>
+                          ) : null}
+                        </div>
+                        <span className="text-[9px] text-muted-foreground">{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm font-medium flex items-center gap-1.5">
+                    <Dumbbell className="h-4 w-4 text-primary" />
+                    Training
+                  </span>
+                  <span className="text-xs text-muted-foreground">{weeklyWorkouts.size}x diese Woche</span>
+                </div>
+                <div className="flex gap-1.5">
+                  {dayLabels.map((label, i) => {
+                    const name = weeklyWorkouts.get(i);
+                    return (
+                      <div key={i} className="flex-1 text-center space-y-1">
+                        <div className={`h-7 rounded-full flex items-center justify-center ${name ? 'bg-primary' : 'bg-muted/20'}`}>
+                          {name ? (
+                            <span className="text-xs font-extrabold text-white truncate px-1">{name.replace(' Day', '')}</span>
+                          ) : null}
+                        </div>
+                        <span className="text-[9px] text-muted-foreground">{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
     </div>
   );
 }
