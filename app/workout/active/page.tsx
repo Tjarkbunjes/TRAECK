@@ -318,11 +318,11 @@ function ExerciseBlockComponent({
       </CardHeader>
       <CardContent className="space-y-1">
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase mb-1">
-          <span className="w-6 text-center">Set</span>
-          <span className="w-20 text-center">kg</span>
-          <span className="w-16 text-center">Reps</span>
-          <span className="w-9" />
-          <span className="w-9" />
+          <span className="w-8 text-center shrink-0">Set</span>
+          <span className="flex-1 text-center">kg</span>
+          <span className="flex-1 text-center">Reps</span>
+          <span className="w-9 shrink-0" />
+          <span className="w-9 shrink-0" />
         </div>
         {block.sets.map((set, setIdx) => (
           <WorkoutSetRow

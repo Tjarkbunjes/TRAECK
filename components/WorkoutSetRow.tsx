@@ -25,15 +25,9 @@ export function WorkoutSetRow({ set, lastSet, onChange, onDelete }: WorkoutSetRo
       'flex items-center gap-2 py-1.5',
       set.completed && 'opacity-60'
     )}>
-      <span className="w-6 text-center text-xs text-muted-foreground font-medium">
+      <span className="w-8 text-center text-xs text-muted-foreground font-medium shrink-0">
         {set.set_number}
       </span>
-
-      {lastSet && (
-        <span className="w-16 text-xs text-muted-foreground text-center truncate">
-          {lastSet.weight_kg ?? '–'}×{lastSet.reps ?? '–'}
-        </span>
-      )}
 
       <Input
         type="number"
@@ -41,14 +35,14 @@ export function WorkoutSetRow({ set, lastSet, onChange, onDelete }: WorkoutSetRo
         placeholder="kg"
         value={set.weight_kg ?? ''}
         onChange={(e) => onChange({ weight_kg: e.target.value ? parseFloat(e.target.value) : null })}
-        className="h-9 w-20 text-center"
+        className="h-9 flex-1 text-center"
       />
       <Input
         type="number"
         placeholder="Reps"
         value={set.reps ?? ''}
         onChange={(e) => onChange({ reps: e.target.value ? parseInt(e.target.value) : null })}
-        className="h-9 w-16 text-center"
+        className="h-9 flex-1 text-center"
       />
 
       <Button
