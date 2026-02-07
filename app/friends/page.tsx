@@ -194,16 +194,9 @@ export default function FriendsPage() {
                   className="w-full text-left"
                 >
                   <CardContent className="p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
-                        <span className="text-sm font-bold">
-                          {displayName[0].toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{displayName}</p>
-                        <p className="text-xs text-muted-foreground">{fp?.email}</p>
-                      </div>
+                    <div>
+                      <p className="text-sm font-medium">{fp?.email || '?'}</p>
+                      <p className="text-xs text-muted-foreground">{displayName}</p>
                     </div>
                     {isExpanded ? (
                       <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
