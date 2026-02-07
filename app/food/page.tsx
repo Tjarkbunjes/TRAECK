@@ -188,7 +188,7 @@ export default function FoodPage() {
           return (
             <div key={meal} className="space-y-2">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                <h2 className="text-sm font-semibold text-muted-foreground">
                   {MEAL_LABELS[meal]}
                 </h2>
                 <span className="text-sm text-muted-foreground font-mono">{Math.round(mealCals)} kcal</span>
