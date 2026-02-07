@@ -319,7 +319,6 @@ function ExerciseBlockComponent({
       <CardContent className="space-y-1">
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase mb-1">
           <span className="w-6 text-center">Set</span>
-          {lastSets.length > 0 && <span className="w-16 text-center">Previous</span>}
           <span className="w-20 text-center">kg</span>
           <span className="w-16 text-center">Reps</span>
           <span className="w-9" />
@@ -329,7 +328,6 @@ function ExerciseBlockComponent({
           <WorkoutSetRow
             key={setIdx}
             set={set}
-            lastSet={lastSets[setIdx]}
             onChange={(updates) => onUpdateSet(setIdx, updates)}
             onDelete={() => onDeleteSet(setIdx)}
           />
