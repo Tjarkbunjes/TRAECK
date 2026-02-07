@@ -69,7 +69,6 @@ export function BarcodeScanner({ onScan, scanning }: BarcodeScannerProps) {
         await videoRef.current.play();
 
         // ─── Step 3: Initialize barcode-detector (WASM polyfill) ───
-        // @ts-expect-error -- barcode-detector/pure has no type declarations
         const { BarcodeDetector } = await import('barcode-detector/pure');
 
         const detector = new BarcodeDetector({
