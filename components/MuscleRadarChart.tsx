@@ -14,7 +14,7 @@ import type { WorkoutSet } from '@/lib/types';
 
 interface MuscleRadarChartProps {
   sets: WorkoutSet[];
-  mode: 'volume' | 'reps';
+  mode: 'sets' | 'reps';
 }
 
 const MUSCLE_GROUPS = [
@@ -37,8 +37,8 @@ export function MuscleRadarChart({ sets, mode }: MuscleRadarChartProps) {
       const mg = set.muscle_group?.toLowerCase();
       if (!mg || !totals.has(mg)) continue;
 
-      if (mode === 'volume') {
-        totals.set(mg, totals.get(mg)! + (set.weight_kg ?? 0) * (set.reps ?? 0));
+      if (mode === 'sets') {
+        totals.set(mg, totals.get(mg)! + 1);
       } else {
         totals.set(mg, totals.get(mg)! + (set.reps ?? 0));
       }
@@ -82,8 +82,8 @@ export function MuscleRadarChart({ sets, mode }: MuscleRadarChartProps) {
             color: '#fff',
           }}
           formatter={(value: number | undefined) => [
-            mode === 'volume' ? `${(value ?? 0).toLocaleString()} kg` : `${value ?? 0} reps`,
-            mode === 'volume' ? 'volume' : 'reps',
+            mode === 'sets' ? `${value ?? 0} sets` : `${value ?? 0} reps`,
+            mode === 'sets' ? 'sets' : 'reps',
           ]}
         />
         <Radar

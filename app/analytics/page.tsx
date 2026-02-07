@@ -5,14 +5,20 @@ import { useAuth, useWeightEntries, useProfile, useAnalyticsWorkouts, useAnalyti
 import { WeightChart } from '@/components/WeightChart';
 import { CalorieChart } from '@/components/CalorieChart';
 import { MuscleRadarChart } from '@/components/MuscleRadarChart';
-import { StrengthProgressionChart } from '@/components/StrengthProgressionChart';
-import { ExerciseProgressCard } from '@/components/ExerciseProgressCard';
+import { ExerciseProgressionChart } from '@/components/ExerciseProgressionChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingDown, TrendingUp, Minus, Loader2 } from 'lucide-react';
-import type { WorkoutSet, Workout } from '@/lib/types';
 
 type TimeRange = '7' | '30' | '90' | '365';
+type Category = 'all' | 'push' | 'pull' | 'legs';
+
+const CATEGORY_MUSCLES: Record<Category, string[]> = {
+  all: [],
+  push: ['chest', 'shoulders'],
+  pull: ['back', 'arms'],
+  legs: ['legs', 'core'],
+};
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
@@ -24,8 +30,8 @@ export default function AnalyticsPage() {
   const { workouts, sets, loading: workoutLoading } = useAnalyticsWorkouts(days);
   const { dailyFood, loading: foodLoading } = useAnalyticsFood(days);
 
-  const [radarMode, setRadarMode] = useState<'volume' | 'reps'>('volume');
-  const [progressionMode, setProgressionMode] = useState<'volume' | 'reps'>('volume');
+  const [radarMode, setRadarMode] = useState<'sets' | 'reps'>('sets');
+  const [category, setCategory] = useState<Category>('all');
 
   // Weight stats
   const latest = weightEntries.length > 0 ? weightEntries[weightEntries.length - 1] : null;
@@ -50,7 +56,7 @@ export default function AnalyticsPage() {
     ? Math.round(dailyFood.reduce((s, d) => s + d.fat, 0) / dailyFood.length)
     : 0;
 
-  // Calorie trend: compare recent 7d avg to previous 7d avg
+  // Calorie trend
   const calorieTrend = useMemo(() => {
     if (dailyFood.length < 2) return 0;
     const sorted = [...dailyFood].sort((a, b) => a.date.localeCompare(b.date));
@@ -63,59 +69,24 @@ export default function AnalyticsPage() {
     return Math.round(((recentAvg - prevAvg) / prevAvg) * 100);
   }, [dailyFood]);
 
-  // Top exercises
-  const topExercises = useMemo(() => {
-    if (sets.length === 0) return [];
+  // Filtered exercises for progression
+  const filteredExercises = useMemo(() => {
+    const allowedMuscles = CATEGORY_MUSCLES[category];
+    const filtered = category === 'all'
+      ? sets
+      : sets.filter((s) => allowedMuscles.includes(s.muscle_group?.toLowerCase() ?? ''));
 
-    // Build workout date lookup
-    const workoutDateMap = new Map<string, string>();
-    for (const w of workouts) {
-      workoutDateMap.set(w.id, w.date);
-    }
-
-    // Group sets by exercise
-    const exerciseMap = new Map<string, { sets: WorkoutSet[], totalVolume: number }>();
-    for (const set of sets) {
-      const existing = exerciseMap.get(set.exercise_name) || { sets: [], totalVolume: 0 };
-      existing.sets.push(set);
-      existing.totalVolume += (set.weight_kg ?? 0) * (set.reps ?? 0);
-      exerciseMap.set(set.exercise_name, existing);
+    // Group by exercise, count total volume to sort
+    const exerciseMap = new Map<string, number>();
+    for (const s of filtered) {
+      const vol = (s.weight_kg ?? 0) * (s.reps ?? 0);
+      exerciseMap.set(s.exercise_name, (exerciseMap.get(s.exercise_name) ?? 0) + vol);
     }
 
     return Array.from(exerciseMap.entries())
-      .filter(([, data]) => data.totalVolume > 0)
-      .sort((a, b) => b[1].totalVolume - a[1].totalVolume)
-      .slice(0, 5)
-      .map(([name, data]) => {
-        const maxWeight = Math.max(...data.sets.map((s) => s.weight_kg ?? 0));
-
-        // Sort sets by workout date for trend
-        const sortedSets = [...data.sets].sort((a, b) => {
-          const dateA = workoutDateMap.get(a.workout_id) || '';
-          const dateB = workoutDateMap.get(b.workout_id) || '';
-          return dateA.localeCompare(dateB);
-        });
-
-        const mid = Math.floor(sortedSets.length / 2);
-        const firstHalfMax = mid > 0 ? Math.max(...sortedSets.slice(0, mid).map((s) => s.weight_kg ?? 0)) : 0;
-        const secondHalfMax = sortedSets.length > 1 ? Math.max(...sortedSets.slice(mid).map((s) => s.weight_kg ?? 0)) : 0;
-        const change = Math.round((secondHalfMax - firstHalfMax) * 10) / 10;
-
-        // Sparkline: max weight per workout date
-        const perWorkout = new Map<string, number>();
-        for (const s of sortedSets) {
-          const date = workoutDateMap.get(s.workout_id) || '';
-          if (date) {
-            perWorkout.set(date, Math.max(perWorkout.get(date) ?? 0, s.weight_kg ?? 0));
-          }
-        }
-        const sparklineData = Array.from(perWorkout.entries())
-          .sort((a, b) => a[0].localeCompare(b[0]))
-          .map(([, v]) => v);
-
-        return { name, maxWeight, change, sparklineData };
-      });
-  }, [sets, workouts]);
+      .sort((a, b) => b[1] - a[1])
+      .map(([name]) => name);
+  }, [sets, category]);
 
   const isLoading = weightLoading || workoutLoading || foodLoading;
 
@@ -152,7 +123,7 @@ export default function AnalyticsPage() {
         <>
           {/* ── Weight Section ── */}
           <section className="space-y-2">
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">weight</h2>
+            <h2 className="text-sm font-medium text-muted-foreground">weight</h2>
             <div className="grid grid-cols-3 gap-2">
               <Card>
                 <CardContent className="p-3 text-center">
@@ -189,9 +160,8 @@ export default function AnalyticsPage() {
 
           {/* ── Nutrition Section ── */}
           <section className="space-y-2">
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">nutrition</h2>
+            <h2 className="text-sm font-medium text-muted-foreground">nutrition</h2>
 
-            {/* Avg Calories */}
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -209,14 +179,12 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
-            {/* Calorie Chart */}
             <Card>
               <CardContent className="pt-4">
                 <CalorieChart data={dailyFood} calorieGoal={profile?.calorie_goal ?? 2000} />
               </CardContent>
             </Card>
 
-            {/* Macro Averages */}
             {dailyFood.length > 0 && (
               <Card>
                 <CardContent className="p-4 space-y-3">
@@ -231,17 +199,17 @@ export default function AnalyticsPage() {
 
           {/* ── Strength Radar Section ── */}
           <section className="space-y-2">
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">strength</h2>
+            <h2 className="text-sm font-medium text-muted-foreground">strength</h2>
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">total {radarMode}</CardTitle>
                   <div className="flex rounded-md border border-[#292929] overflow-hidden">
                     <button
-                      onClick={() => setRadarMode('volume')}
-                      className={`px-3 py-1 text-xs transition-colors ${radarMode === 'volume' ? 'bg-[#2626FF] text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                      onClick={() => setRadarMode('sets')}
+                      className={`px-3 py-1 text-xs transition-colors ${radarMode === 'sets' ? 'bg-[#2626FF] text-white' : 'text-muted-foreground hover:text-foreground'}`}
                     >
-                      volume
+                      sets
                     </button>
                     <button
                       onClick={() => setRadarMode('reps')}
@@ -258,58 +226,49 @@ export default function AnalyticsPage() {
             </Card>
           </section>
 
-          {/* ── Strength Progression Section ── */}
+          {/* ── Progression Section (per exercise) ── */}
           <section className="space-y-2">
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">progression</CardTitle>
-                  <div className="flex rounded-md border border-[#292929] overflow-hidden">
-                    <button
-                      onClick={() => setProgressionMode('volume')}
-                      className={`px-3 py-1 text-xs transition-colors ${progressionMode === 'volume' ? 'bg-[#2626FF] text-white' : 'text-muted-foreground hover:text-foreground'}`}
-                    >
-                      volume
-                    </button>
-                    <button
-                      onClick={() => setProgressionMode('reps')}
-                      className={`px-3 py-1 text-xs transition-colors ${progressionMode === 'reps' ? 'bg-[#2626FF] text-white' : 'text-muted-foreground hover:text-foreground'}`}
-                    >
-                      reps
-                    </button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <StrengthProgressionChart workouts={workouts} sets={sets} mode={progressionMode} />
-              </CardContent>
-            </Card>
-          </section>
+            <h2 className="text-sm font-medium text-muted-foreground">progression</h2>
 
-          {/* ── Top Exercises Section ── */}
-          {topExercises.length > 0 && (
-            <section className="space-y-2">
-              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">top exercises</h2>
-              <div className="space-y-2">
-                {topExercises.map((ex) => (
-                  <ExerciseProgressCard
-                    key={ex.name}
-                    name={ex.name}
-                    maxWeight={ex.maxWeight}
-                    change={ex.change}
-                    sparklineData={ex.sparklineData}
-                  />
+            {/* Category filter */}
+            <div className="flex gap-1.5">
+              {(['all', 'push', 'pull', 'legs'] as Category[]).map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={`px-3 py-1.5 text-xs rounded-md transition-colors ${category === cat ? 'bg-[#2626FF] text-white' : 'bg-[#1E1E1E] text-muted-foreground hover:text-foreground'}`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            {filteredExercises.length === 0 ? (
+              <div className="flex h-32 items-center justify-center text-muted-foreground text-sm">
+                no exercise data for this period.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredExercises.map((name) => (
+                  <Card key={name}>
+                    <CardContent className="pt-3 pb-2">
+                      <ExerciseProgressionChart
+                        exerciseName={name}
+                        workouts={workouts}
+                        sets={sets}
+                      />
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
-            </section>
-          )}
+            )}
+          </section>
         </>
       )}
     </div>
   );
 }
 
-// Inline MacroBar component
 function MacroBar({ label, current, goal, color }: { label: string; current: number; goal: number; color: string }) {
   const pct = Math.min((current / goal) * 100, 100);
   return (
