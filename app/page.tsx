@@ -125,14 +125,14 @@ export default function HomePage() {
             {format(new Date(), 'EEEE, MMMM d, yyyy')}
           </p>
         </div>
-        <Link href="/profile" className="h-9 w-9 rounded-full bg-muted/50 flex items-center justify-center shrink-0 mt-0.5">
+        <Link href="/profile" className="h-9 w-9 rounded-full bg-[#0F0F0F] border border-[#292929] flex items-center justify-center shrink-0 mt-0.5">
           <User className="h-4 w-4 text-muted-foreground" />
         </Link>
       </div>
 
       {/* Calorie Overview */}
       {profile && (
-        <Card>
+        <Card className="bg-[#0F0F0F] border-[#292929]">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">today</CardTitle>
           </CardHeader>
@@ -154,25 +154,25 @@ export default function HomePage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-2">
-        <Button asChild className="h-14" variant="outline">
+        <Button asChild className="h-14 bg-[#0F0F0F] border-[#292929] hover:bg-[#222222]" variant="outline">
           <Link href="/food/add">
             <Utensils className="mr-2 h-5 w-5" />
             log food
           </Link>
         </Button>
-        <Button asChild className="h-14" variant="outline">
+        <Button asChild className="h-14 bg-[#0F0F0F] border-[#292929] hover:bg-[#222222]" variant="outline">
           <Link href="/workout">
             <Dumbbell className="mr-2 h-5 w-5" />
             workout
           </Link>
         </Button>
-        <Button asChild className="h-14" variant="outline">
+        <Button asChild className="h-14 bg-[#0F0F0F] border-[#292929] hover:bg-[#222222]" variant="outline">
           <Link href="/weight">
             <Scale className="mr-2 h-5 w-5" />
             weight
           </Link>
         </Button>
-        <Button asChild className="h-14" variant="outline">
+        <Button asChild className="h-14 bg-[#0F0F0F] border-[#292929] hover:bg-[#222222]" variant="outline">
           <Link href="/friends">
             <Users className="mr-2 h-5 w-5" />
             friends
