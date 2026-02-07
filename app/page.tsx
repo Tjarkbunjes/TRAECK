@@ -185,7 +185,7 @@ export default function HomePage() {
         const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         const foodDays = weeklyFood.size;
         return (
-          <Card>
+          <Card className="bg-[#0F0F0F] border-[#292929]">
             <CardContent className="p-4 space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -200,7 +200,7 @@ export default function HomePage() {
                     const kcal = weeklyFood.get(i);
                     return (
                       <div key={i} className="flex-1 text-center space-y-1">
-                        <div className={`h-7 rounded-[5px] flex items-center justify-center ${kcal ? 'bg-accent border border-dashed border-[#000082]' : 'bg-muted/20 border border-transparent'}`}>
+                        <div className={`h-7 rounded-[5px] flex items-center justify-center border border-[#292929] ${kcal ? 'bg-[#2626FF]' : 'bg-[#222222]'}`}>
                           {kcal ? (
                             <span className="text-xs font-extrabold text-white font-mono">{Math.round(kcal)}</span>
                           ) : null}
@@ -224,7 +224,7 @@ export default function HomePage() {
                     const name = weeklyWorkouts.get(i);
                     return (
                       <div key={i} className="flex-1 text-center space-y-1">
-                        <div className={`h-7 rounded-[5px] flex items-center justify-center ${name ? 'bg-accent border border-dashed border-[#000082]' : 'bg-muted/20 border border-transparent'}`}>
+                        <div className={`h-7 rounded-[5px] flex items-center justify-center border border-[#292929] ${name ? 'bg-[#2626FF]' : 'bg-[#222222]'}`}>
                           {name ? (
                             <span className="text-xs font-extrabold text-white truncate px-1">{name.replace(' Day', '')}</span>
                           ) : null}
@@ -248,7 +248,7 @@ export default function HomePage() {
                     const kg = weeklyWeight.get(i);
                     return (
                       <div key={i} className="flex-1 text-center space-y-1">
-                        <div className={`h-7 rounded-[5px] flex items-center justify-center ${kg ? 'bg-accent border border-dashed border-[#000082]' : 'bg-muted/20 border border-transparent'}`}>
+                        <div className={`h-7 rounded-[5px] flex items-center justify-center border border-[#292929] ${kg ? 'bg-[#2626FF]' : 'bg-[#222222]'}`}>
                           {kg ? (
                             <span className="text-xs font-extrabold text-white font-mono">{kg}</span>
                           ) : null}
