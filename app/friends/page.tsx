@@ -397,8 +397,8 @@ function FriendDashboard({
                         isFuture
                           ? 'bg-transparent border-transparent'
                           : hasWorkout
-                          ? 'bg-[#2626FF] border-[#2626FF]'
-                          : 'bg-muted/20 border-muted/40'
+                          ? 'bg-[#2626FF] border-[#4040FF]'
+                          : 'bg-muted/20 border-muted-foreground/20'
                       }`}
                       title={hasWorkout ? `${day.dayStr}: ${day.workout?.name || 'workout'}` : day?.dayStr}
                     />
