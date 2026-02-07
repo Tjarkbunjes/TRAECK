@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Search, Star, Clock, Save } from 'lucide-react';
+import { ArrowLeft, Search, Star, Clock, Save, ScanBarcode } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { MEAL_LABELS, type MealType, type FoodProduct } from '@/lib/types';
@@ -257,6 +257,19 @@ function AddFoodPageInner() {
           ))}
         </div>
       )}
+
+      <div className="flex items-center gap-3">
+        <Separator className="flex-1" />
+        <span className="text-xs text-muted-foreground">or</span>
+        <Separator className="flex-1" />
+      </div>
+
+      <Button variant="outline" className="w-full" asChild>
+        <Link href={`/food/scan?date=${date}`}>
+          <ScanBarcode className="mr-2 h-4 w-4" />
+          scan barcode
+        </Link>
+      </Button>
 
       <Separator />
 
