@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useAuth, useFriends, useFriendRequests, useFriendWorkouts, useFriendWeight } from '@/lib/hooks';
+import { useAuth, useFriends, useFriendRequests, useFriendWorkouts, useFriendWeight, useFriendCaloriesWeek } from '@/lib/hooks';
 import { WeightChart } from '@/components/WeightChart';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { UserPlus, Check, X, ChevronDown, ChevronUp, Dumbbell, Scale, Mail, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, parseISO, addDays, eachWeekOfInterval, subDays } from 'date-fns';
+import { format, addDays, eachWeekOfInterval, startOfWeek, startOfYear, differenceInWeeks } from 'date-fns';
 
 export default function FriendsPage() {
   const { user } = useAuth();
@@ -245,31 +245,24 @@ function FriendDashboard({
 }) {
   const { workouts, loading: workoutsLoading } = useFriendWorkouts(friendId);
   const { entries: weightEntries, loading: weightLoading } = useFriendWeight(friendId);
+  const { days: calorieDays } = useFriendCaloriesWeek(friendId);
   const [editingName, setEditingName] = useState(false);
   const [nickname, setNickname] = useState(currentNickname);
 
-  // Build activity grid: last 12 weeks, per day
-  const activityByWeek = useMemo(() => {
-    const now = new Date();
-    const start = subDays(now, 83); // 12 weeks
-    const weeks = eachWeekOfInterval({ start, end: now }, { weekStartsOn: 1 });
+  const now = new Date();
+  const yearStart = startOfYear(now);
 
-    return weeks.map((weekStart) => {
-      const days = Array.from({ length: 7 }, (_, i) => {
-        const day = addDays(weekStart, i);
-        const dayStr = format(day, 'yyyy-MM-dd');
-        const workout = workouts.find((w) => w.date === dayStr);
-        return { date: day, dayStr, workout };
-      });
-      return { weekStart, days };
-    });
-  }, [workouts]);
+  // Workouts this week
+  const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });
+  const thisWeekStr = format(thisWeekStart, 'yyyy-MM-dd');
+  const workoutsThisWeek = workouts.filter(w => w.date >= thisWeekStr).length;
 
-  const totalWorkouts = workouts.length;
-  const workoutsPerWeek = totalWorkouts > 0
-    ? Math.round((totalWorkouts / 12) * 10) / 10
-    : 0;
+  // Avg calories this week
+  const avgCaloriesWeek = calorieDays.length > 0
+    ? Math.round(calorieDays.reduce((s, d) => s + Number(d.total_calories), 0) / calorieDays.length)
+    : null;
 
+  // Last weight
   const weightChartEntries = useMemo(() => {
     return weightEntries.map((e) => ({
       id: e.date,
@@ -286,10 +279,37 @@ function FriendDashboard({
     ? weightChartEntries[weightChartEntries.length - 1].weight_kg
     : null;
 
+  // Per week average (from first entry this year)
+  const perWeekAvg = useMemo(() => {
+    if (workouts.length === 0) return 0;
+    const sorted = [...workouts].sort((a, b) => a.date.localeCompare(b.date));
+    const firstEntryDate = new Date(sorted[0].date + 'T12:00:00');
+    const weeksActive = Math.max(1, differenceInWeeks(now, firstEntryDate) + 1);
+    return Math.round((workouts.length / weeksActive) * 10) / 10;
+  }, [workouts, now]);
+
+  // Build activity grid: from Jan 1 to now
+  const activityByWeek = useMemo(() => {
+    const weeks = eachWeekOfInterval({ start: yearStart, end: now }, { weekStartsOn: 1 });
+
+    return weeks.map((ws) => {
+      const days = Array.from({ length: 7 }, (_, i) => {
+        const day = addDays(ws, i);
+        const dayStr = format(day, 'yyyy-MM-dd');
+        const workout = workouts.find((w) => w.date === dayStr);
+        return { date: day, dayStr, workout };
+      });
+      return { weekStart: ws, days };
+    });
+  }, [workouts, yearStart, now]);
+
   function saveNickname() {
     onSetNickname(friendshipId, nickname.trim());
     setEditingName(false);
   }
+
+  // Calculate label interval based on number of weeks
+  const labelInterval = activityByWeek.length > 20 ? 6 : activityByWeek.length > 10 ? 4 : 3;
 
   return (
     <div className="px-3 pb-3 space-y-4 border-t border-border pt-3">
@@ -326,37 +346,42 @@ function FriendDashboard({
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-lg bg-muted/20 p-2.5 text-center">
-          <p className="text-lg font-bold font-mono">{totalWorkouts}</p>
-          <p className="text-[10px] text-muted-foreground">workouts (90d)</p>
+          <p className="text-lg font-bold font-mono">{workoutsThisWeek}</p>
+          <p className="text-[10px] text-muted-foreground">workouts this week</p>
         </div>
         <div className="rounded-lg bg-muted/20 p-2.5 text-center">
-          <p className="text-lg font-bold font-mono">{workoutsPerWeek}</p>
-          <p className="text-[10px] text-muted-foreground">per week avg</p>
+          <p className="text-lg font-bold font-mono">{avgCaloriesWeek ?? '–'}</p>
+          <p className="text-[10px] text-muted-foreground">avg kcal this week</p>
         </div>
         <div className="rounded-lg bg-muted/20 p-2.5 text-center">
           <p className="text-lg font-bold font-mono">{latestWeight ?? '–'}</p>
-          <p className="text-[10px] text-muted-foreground">weight (kg)</p>
+          <p className="text-[10px] text-muted-foreground">last weight</p>
         </div>
       </div>
 
-      {/* Gym Activity Heatmap */}
+      {/* Gym Activity Heatmap - this year */}
       <div>
-        <div className="flex items-center gap-1.5 mb-2">
-          <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium">gym activity</span>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium">gym activity {now.getFullYear()}</span>
+          </div>
+          <span className="text-[10px] text-muted-foreground">
+            {workouts.length} workouts · {perWeekAvg}/week
+          </span>
         </div>
         {workoutsLoading ? (
           <div className="text-xs text-muted-foreground py-2">loading...</div>
         ) : (
-          <div className="space-y-0.5">
-            {/* Day labels */}
-            <div className="flex gap-[3px] mb-1">
-              <div className="w-5" />
+          <div className="space-y-0.5 overflow-x-auto">
+            {/* Month labels */}
+            <div className="flex gap-[2px] mb-1">
+              <div className="w-4 shrink-0" />
               {activityByWeek.map((week, wi) => (
-                <div key={wi} className="flex-1 text-center">
-                  {wi % 3 === 0 && (
-                    <span className="text-[8px] text-muted-foreground">
-                      {format(week.weekStart, 'MMM d')}
+                <div key={wi} className="flex-1 min-w-[8px] text-center">
+                  {wi % labelInterval === 0 && (
+                    <span className="text-[7px] text-muted-foreground">
+                      {format(week.weekStart, 'MMM')}
                     </span>
                   )}
                 </div>
@@ -364,16 +389,18 @@ function FriendDashboard({
             </div>
             {/* Grid rows (Mon-Sun) */}
             {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((dayLabel, dayIdx) => (
-              <div key={dayIdx} className="flex gap-[3px] items-center">
-                <span className="text-[8px] text-muted-foreground w-5 text-right pr-1">{dayLabel}</span>
+              <div key={dayIdx} className="flex gap-[2px] items-center">
+                <span className="text-[7px] text-muted-foreground w-4 shrink-0 text-right pr-0.5">
+                  {dayIdx % 2 === 0 ? dayLabel : ''}
+                </span>
                 {activityByWeek.map((week, wi) => {
                   const day = week.days[dayIdx];
                   const hasWorkout = !!day?.workout;
-                  const isFuture = day?.date > new Date();
+                  const isFuture = day?.date > now;
                   return (
                     <div
                       key={wi}
-                      className={`flex-1 aspect-square rounded-[3px] ${
+                      className={`flex-1 min-w-[8px] aspect-square rounded-[2px] ${
                         isFuture
                           ? 'bg-transparent'
                           : hasWorkout
@@ -390,11 +417,11 @@ function FriendDashboard({
         )}
       </div>
 
-      {/* Weight Chart */}
+      {/* Weight Chart - this year */}
       <div>
         <div className="flex items-center gap-1.5 mb-2">
           <Scale className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium">weight (90 days)</span>
+          <span className="text-xs font-medium">weight {now.getFullYear()}</span>
         </div>
         {weightLoading ? (
           <div className="text-xs text-muted-foreground py-2">loading...</div>

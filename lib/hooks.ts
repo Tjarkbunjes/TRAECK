@@ -284,7 +284,7 @@ export function useFriendWorkouts(friendId: string | null) {
     if (!friendId) { setWorkouts([]); return; }
     setLoading(true);
     supabase
-      .rpc('get_friend_workouts', { p_friend_id: friendId, p_days: 90 })
+      .rpc('get_friend_workouts', { p_friend_id: friendId })
       .then(({ data }) => {
         setWorkouts(data || []);
         setLoading(false);
@@ -302,7 +302,7 @@ export function useFriendWeight(friendId: string | null) {
     if (!friendId) { setEntries([]); return; }
     setLoading(true);
     supabase
-      .rpc('get_friend_weight', { p_friend_id: friendId, p_days: 90 })
+      .rpc('get_friend_weight', { p_friend_id: friendId })
       .then(({ data }) => {
         setEntries(data || []);
         setLoading(false);
@@ -310,4 +310,22 @@ export function useFriendWeight(friendId: string | null) {
   }, [friendId]);
 
   return { entries, loading };
+}
+
+export function useFriendCaloriesWeek(friendId: string | null) {
+  const [days, setDays] = useState<{ date: string; total_calories: number }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!friendId) { setDays([]); return; }
+    setLoading(true);
+    supabase
+      .rpc('get_friend_calories_week', { p_friend_id: friendId })
+      .then(({ data }) => {
+        setDays(data || []);
+        setLoading(false);
+      });
+  }, [friendId]);
+
+  return { days, loading };
 }
