@@ -124,7 +124,7 @@ export default function WorkoutPage() {
 
   return (
     <div className="mx-auto max-w-md p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Workout</h1>
+      <h1 className="text-2xl font-bold">workout</h1>
 
       <Button onClick={() => setShowStartDialog(true)} className="w-full h-14 text-lg">
         <Plus className="mr-2 h-5 w-5" />
@@ -144,13 +144,13 @@ export default function WorkoutPage() {
             >
               <Zap className="mr-3 h-5 w-5 text-primary" />
               <div>
-                <p className="font-medium">Empty Workout</p>
+                <p className="font-medium">empty workout</p>
                 <p className="text-xs text-muted-foreground">add exercises individually</p>
               </div>
             </Button>
             {templates.length > 0 && (
               <>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider pt-2 pb-1">Templates</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider pt-2 pb-1">templates</div>
                 {templates.map((t) => (
                   <Button
                     key={t.id}
@@ -173,8 +173,8 @@ export default function WorkoutPage() {
 
       <Tabs defaultValue="history">
         <TabsList className="w-full">
-          <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
-          <TabsTrigger value="templates" className="flex-1">Templates</TabsTrigger>
+          <TabsTrigger value="history" className="flex-1">history</TabsTrigger>
+          <TabsTrigger value="templates" className="flex-1">templates</TabsTrigger>
         </TabsList>
 
         <TabsContent value="history" className="space-y-2 mt-4">

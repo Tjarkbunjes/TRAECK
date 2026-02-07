@@ -78,11 +78,11 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-md p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Profile & Settings</h1>
+      <h1 className="text-2xl font-bold">profile & settings</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Personal Info</CardTitle>
+          <CardTitle className="text-lg">personal info</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -102,7 +102,7 @@ export default function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Daily Goals</CardTitle>
+          <CardTitle className="text-lg">daily goals</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
@@ -144,7 +144,7 @@ export default function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Weight Goal</CardTitle>
+          <CardTitle className="text-lg">weight goal</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">

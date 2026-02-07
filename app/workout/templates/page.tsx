@@ -64,7 +64,7 @@ export default function TemplatesPage() {
 
   async function handleSave() {
     if (!user || !formName.trim() || formExercises.length === 0) {
-      toast.error('Name and at least one exercise required.');
+      toast.error('name and at least one exercise required.');
       return;
     }
 
@@ -79,9 +79,9 @@ export default function TemplatesPage() {
         .eq('id', editingTemplate.id);
       if (error) {
         console.error('Template update error:', error);
-        toast.error(`Error: ${error.message}`);
+        toast.error(`error: ${error.message}`);
       } else {
-        toast.success('Template updated.');
+        toast.success('template updated.');
         cancelForm();
         loadTemplates();
       }
@@ -94,9 +94,9 @@ export default function TemplatesPage() {
       });
       if (error) {
         console.error('Template save error:', error);
-        toast.error(`Error: ${error.message}`);
+        toast.error(`error: ${error.message}`);
       } else {
-        toast.success('Template saved.');
+        toast.success('template saved.');
         cancelForm();
         loadTemplates();
       }
@@ -108,7 +108,7 @@ export default function TemplatesPage() {
     if (error) {
       toast.error(`Error: ${error.message}`);
     } else {
-      toast.success('Template deleted.');
+      toast.success('template deleted.');
       loadTemplates();
     }
   }
@@ -131,14 +131,14 @@ export default function TemplatesPage() {
         <Button variant="ghost" size="icon" asChild>
           <Link href="/workout"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
-        <h1 className="text-xl font-bold">Workout Templates</h1>
+        <h1 className="text-xl font-bold">workout templates</h1>
       </div>
 
       {!showForm ? (
         <>
           <Button onClick={startCreate} className="w-full">
             <Plus className="mr-2 h-4 w-4" />
-            Create New Template
+            create new template
           </Button>
 
           <div className="space-y-2">
@@ -176,7 +176,7 @@ export default function TemplatesPage() {
             ))}
             {templates.length === 0 && (
               <p className="text-center text-muted-foreground py-4 text-sm">
-                No templates yet.
+                no templates yet.
               </p>
             )}
           </div>
@@ -184,7 +184,7 @@ export default function TemplatesPage() {
       ) : (
         <div className="space-y-4">
           <h2 className="text-sm font-semibold text-muted-foreground">
-            {editingTemplate ? 'Edit Template' : 'New Template'}
+            {editingTemplate ? 'edit template' : 'new template'}
           </h2>
 
           <div className="space-y-2">
@@ -236,18 +236,18 @@ export default function TemplatesPage() {
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full">
                 <Plus className="mr-2 h-4 w-4" />
-                Add Exercise
+                add exercise
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Choose Exercise</DialogTitle>
+                <DialogTitle>choose exercise</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search exercise..."
+                    placeholder="search exercise..."
                     value={exerciseSearch}
                     onChange={(e) => { setExerciseSearch(e.target.value); setSelectedGroup(null); }}
                     className="pl-9"
@@ -287,10 +287,10 @@ export default function TemplatesPage() {
           <div className="flex gap-2">
             <Button onClick={handleSave} className="flex-1">
               <Save className="mr-2 h-4 w-4" />
-              {editingTemplate ? 'Update' : 'Save'}
+              {editingTemplate ? 'update' : 'save'}
             </Button>
             <Button variant="outline" onClick={cancelForm}>
-              Cancel
+              cancel
             </Button>
           </div>
         </div>

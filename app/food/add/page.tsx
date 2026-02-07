@@ -229,7 +229,7 @@ function AddFoodPageInner() {
         <Button variant="ghost" size="icon" asChild>
           <Link href="/food"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
-        <h1 className="text-xl font-bold">{editId ? 'Edit Entry' : 'Add Food'}</h1>
+        <h1 className="text-xl font-bold">{editId ? 'edit entry' : 'add food'}</h1>
       </div>
 
       {/* Search */}
@@ -284,7 +284,7 @@ function AddFoodPageInner() {
           <Input type="number" value={servingGrams} onChange={(e) => setServingGrams(Number(e.target.value))} />
         </div>
 
-        <p className="text-xs text-muted-foreground">Nutrition per 100g:</p>
+        <p className="text-xs text-muted-foreground">nutrition per 100g:</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">Calories</Label>
@@ -315,24 +315,24 @@ function AddFoodPageInner() {
         {/* Calculated values */}
         <Card className="bg-muted/30">
           <CardContent className="p-3">
-            <p className="text-sm font-medium mb-1">Calculated ({servingGrams}g):</p>
+            <p className="text-sm font-medium mb-1">calculated ({servingGrams}g):</p>
             <div className="grid grid-cols-4 gap-2 text-center text-xs">
               <div>
                 <p className="text-lg font-bold font-mono">{Math.round(calcValue(caloriesPer100))}</p>
                 <p className="text-muted-foreground">kcal</p>
               </div>
               <div>
-                <p className="text-lg font-bold font-mono text-[#0096FF]">{Math.round(calcValue(proteinPer100))}</p>
-                <p className="text-muted-foreground">Protein</p>
+                <p className="text-lg font-bold font-mono text-[#004AC2]">{Math.round(calcValue(proteinPer100))}</p>
+                <p className="text-muted-foreground">protein</p>
               </div>
               <div>
-                <p className="text-lg font-bold font-mono text-[#2DCAEF]">{Math.round(calcValue(carbsPer100))}</p>
-                <p className="text-muted-foreground">Carbs</p>
+                <p className="text-lg font-bold font-mono text-[#0096FF]">{Math.round(calcValue(carbsPer100))}</p>
+                <p className="text-muted-foreground">carbs</p>
                 <p className="text-[10px] text-muted-foreground">sugar: {Math.round(calcValue(sugarPer100))}g</p>
               </div>
               <div>
-                <p className="text-lg font-bold font-mono text-[#8062FA]">{Math.round(calcValue(fatPer100))}</p>
-                <p className="text-muted-foreground">Fat</p>
+                <p className="text-lg font-bold font-mono text-[#2DCAEF]">{Math.round(calcValue(fatPer100))}</p>
+                <p className="text-muted-foreground">fat</p>
                 <p className="text-[10px] text-muted-foreground">sat: {Math.round(calcValue(saturatedFatPer100))}g</p>
               </div>
             </div>
@@ -356,7 +356,7 @@ function AddFoodPageInner() {
           <Separator />
           <div>
             <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1 mb-2">
-              <Star className="h-3 w-3" /> Favorites
+              <Star className="h-3 w-3" /> favorites
             </h2>
             <div className="space-y-1">
               {favorites.map((f, i) => (
@@ -378,7 +378,7 @@ function AddFoodPageInner() {
           <Separator />
           <div>
             <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1 mb-2">
-              <Clock className="h-3 w-3" /> Recent
+              <Clock className="h-3 w-3" /> recent
             </h2>
             <div className="space-y-1">
               {recent.map((f, i) => (

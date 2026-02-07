@@ -72,7 +72,7 @@ function ScanPageInner() {
         <Button variant="ghost" size="icon" asChild>
           <Link href="/food"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
-        <h1 className="text-xl font-bold">Scan Barcode</h1>
+        <h1 className="text-xl font-bold">scan barcode</h1>
       </div>
 
       {scanning && <BarcodeScanner onScan={handleScan} scanning={scanning} />}
@@ -91,24 +91,24 @@ function ScanPageInner() {
             <CardTitle className="text-lg">{product.name}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-xs text-muted-foreground">Nutrition per 100g:</p>
+            <p className="text-xs text-muted-foreground">nutrition per 100g:</p>
             <div className="grid grid-cols-4 gap-2 text-center">
               <div>
                 <p className="text-xl font-bold font-mono">{Math.round(product.calories_per_100g)}</p>
                 <p className="text-xs text-muted-foreground">kcal</p>
               </div>
               <div>
-                <p className="text-xl font-bold font-mono text-[#0096FF]">{Math.round(product.protein_per_100g)}</p>
-                <p className="text-xs text-muted-foreground">Protein</p>
+                <p className="text-xl font-bold font-mono text-[#004AC2]">{Math.round(product.protein_per_100g)}</p>
+                <p className="text-xs text-muted-foreground">protein</p>
               </div>
               <div>
-                <p className="text-xl font-bold font-mono text-[#2DCAEF]">{Math.round(product.carbs_per_100g)}</p>
-                <p className="text-xs text-muted-foreground">Carbs</p>
+                <p className="text-xl font-bold font-mono text-[#0096FF]">{Math.round(product.carbs_per_100g)}</p>
+                <p className="text-xs text-muted-foreground">carbs</p>
                 <p className="text-[10px] text-muted-foreground">sugar: {Math.round(product.sugar_per_100g || 0)}g</p>
               </div>
               <div>
-                <p className="text-xl font-bold font-mono text-[#8062FA]">{Math.round(product.fat_per_100g)}</p>
-                <p className="text-xs text-muted-foreground">Fat</p>
+                <p className="text-xl font-bold font-mono text-[#2DCAEF]">{Math.round(product.fat_per_100g)}</p>
+                <p className="text-xs text-muted-foreground">fat</p>
                 <p className="text-[10px] text-muted-foreground">sat: {Math.round(product.saturated_fat_per_100g || 0)}g</p>
               </div>
             </div>

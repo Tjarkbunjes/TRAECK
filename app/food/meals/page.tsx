@@ -180,7 +180,7 @@ export default function MealsPage() {
         <Button variant="ghost" size="icon" asChild>
           <Link href="/food"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
-        <h1 className="text-xl font-bold">Meals</h1>
+        <h1 className="text-xl font-bold">meals</h1>
       </div>
 
       {!editing ? (
@@ -279,7 +279,7 @@ export default function MealsPage() {
 
           {/* Items list */}
           <div>
-            <h3 className="text-sm font-semibold mb-2">Food Items ({items.length})</h3>
+            <h3 className="text-sm font-semibold mb-2">food items ({items.length})</h3>
             {items.length === 0 ? (
               <p className="text-xs text-muted-foreground py-2">no food items added yet.</p>
             ) : (
@@ -310,23 +310,23 @@ export default function MealsPage() {
           {items.length > 0 && (
             <Card className="bg-muted/30">
               <CardContent className="p-3">
-                <p className="text-sm font-medium mb-1">Total:</p>
+                <p className="text-sm font-medium mb-1">total:</p>
                 <div className="grid grid-cols-4 gap-2 text-center text-xs">
                   <div>
                     <p className="text-lg font-bold font-mono">{Math.round(totals.calories)}</p>
                     <p className="text-muted-foreground">kcal</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold font-mono text-[#0096FF]">{Math.round(totals.protein)}</p>
-                    <p className="text-muted-foreground">Protein</p>
+                    <p className="text-lg font-bold font-mono text-[#004AC2]">{Math.round(totals.protein)}</p>
+                    <p className="text-muted-foreground">protein</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold font-mono text-[#2DCAEF]">{Math.round(totals.carbs)}</p>
-                    <p className="text-muted-foreground">Carbs</p>
+                    <p className="text-lg font-bold font-mono text-[#0096FF]">{Math.round(totals.carbs)}</p>
+                    <p className="text-muted-foreground">carbs</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold font-mono text-[#8062FA]">{Math.round(totals.fat)}</p>
-                    <p className="text-muted-foreground">Fat</p>
+                    <p className="text-lg font-bold font-mono text-[#2DCAEF]">{Math.round(totals.fat)}</p>
+                    <p className="text-muted-foreground">fat</p>
                   </div>
                 </div>
               </CardContent>
@@ -343,7 +343,7 @@ export default function MealsPage() {
             </DialogTrigger>
             <DialogContent className="max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add Food Item</DialogTitle>
+                <DialogTitle>add food item</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 {/* Search */}

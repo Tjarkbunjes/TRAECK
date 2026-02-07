@@ -67,7 +67,7 @@ export default function WeightPage() {
 
   return (
     <div className="mx-auto max-w-md p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Weight</h1>
+      <h1 className="text-2xl font-bold">weight</h1>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-2">
@@ -102,7 +102,7 @@ export default function WeightPage() {
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">History</CardTitle>
+            <CardTitle className="text-lg">history</CardTitle>
             <Tabs value={range} onValueChange={(v) => setRange(v as TimeRange)}>
               <TabsList className="h-8">
                 <TabsTrigger value="7" className="text-xs px-2 h-6">7d</TabsTrigger>
@@ -125,7 +125,7 @@ export default function WeightPage() {
       {/* Add Weight */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Log Weight</CardTitle>
+          <CardTitle className="text-lg">log weight</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3">

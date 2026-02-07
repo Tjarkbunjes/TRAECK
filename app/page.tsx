@@ -167,7 +167,7 @@ export default function HomePage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm font-medium flex items-center gap-1.5">
-                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <TrendingUp className="h-4 w-4 text-white" />
                     nutrition
                   </span>
                   <span className="text-xs text-muted-foreground">{foodDays}/7 days</span>
@@ -177,7 +177,7 @@ export default function HomePage() {
                     const kcal = weeklyFood.get(i);
                     return (
                       <div key={i} className="flex-1 text-center space-y-1">
-                        <div className={`h-7 rounded-full flex items-center justify-center ${kcal ? 'bg-primary' : 'bg-muted/20'}`}>
+                        <div className={`h-7 rounded-lg flex items-center justify-center ${kcal ? 'bg-muted/50' : 'bg-muted/20'}`}>
                           {kcal ? (
                             <span className="text-xs font-extrabold text-white font-mono">{Math.round(kcal)}</span>
                           ) : null}
@@ -191,7 +191,7 @@ export default function HomePage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm font-medium flex items-center gap-1.5">
-                    <Dumbbell className="h-4 w-4 text-primary" />
+                    <Dumbbell className="h-4 w-4 text-white" />
                     training
                   </span>
                   <span className="text-xs text-muted-foreground">{weeklyWorkouts.size}x this week</span>
@@ -201,7 +201,7 @@ export default function HomePage() {
                     const name = weeklyWorkouts.get(i);
                     return (
                       <div key={i} className="flex-1 text-center space-y-1">
-                        <div className={`h-7 rounded-full flex items-center justify-center ${name ? 'bg-primary' : 'bg-muted/20'}`}>
+                        <div className={`h-7 rounded-lg flex items-center justify-center ${name ? 'bg-muted/50' : 'bg-muted/20'}`}>
                           {name ? (
                             <span className="text-xs font-extrabold text-white truncate px-1">{name.replace(' Day', '')}</span>
                           ) : null}

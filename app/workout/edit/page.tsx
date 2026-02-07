@@ -276,7 +276,7 @@ function EditWorkoutPageInner() {
         </DialogTrigger>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Choose Exercise</DialogTitle>
+            <DialogTitle>choose exercise</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="relative">

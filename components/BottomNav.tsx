@@ -6,11 +6,11 @@ import { Home, Utensils, Dumbbell, Scale, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/food', label: 'Food', icon: Utensils },
-  { href: '/workout', label: 'Workout', icon: Dumbbell },
-  { href: '/weight', label: 'Weight', icon: Scale },
-  { href: '/profile', label: 'Profile', icon: User },
+  { href: '/', label: 'home', icon: Home },
+  { href: '/food', label: 'food', icon: Utensils },
+  { href: '/workout', label: 'workout', icon: Dumbbell },
+  { href: '/weight', label: 'weight', icon: Scale },
+  { href: '/profile', label: 'profile', icon: User },
 ];
 
 export function BottomNav() {
