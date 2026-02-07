@@ -38,13 +38,6 @@ export function MacroRings({
       {/* Calorie Ring */}
       <div className="relative flex items-center justify-center" style={{ width: ringSize, height: ringSize }}>
         <svg width={ringSize} height={ringSize} className="-rotate-90">
-          <defs>
-            <linearGradient id="calorieGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#4833FF" />
-              <stop offset="30%" stopColor="#8062FA" />
-              <stop offset="100%" stopColor="#8062FA" />
-            </linearGradient>
-          </defs>
           <circle
             cx={ringSize / 2}
             cy={ringSize / 2}
@@ -59,7 +52,7 @@ export function MacroRings({
             cy={ringSize / 2}
             r={radius}
             fill="none"
-            stroke={calories > calorieGoal ? 'currentColor' : 'url(#calorieGradient)'}
+            stroke={calories > calorieGoal ? 'currentColor' : '#2626FF'}
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             strokeDashoffset={offset}
@@ -82,15 +75,15 @@ export function MacroRings({
 
       {/* Macro Bars */}
       <div className="flex-1 space-y-3">
-        <MacroBar label="Protein" value={protein} goal={proteinGoal} gradient="linear-gradient(to right, #0096FF, #0096FF)" unit="g" />
-        <MacroBar label="Carbs" value={carbs} goal={carbsGoal} gradient="linear-gradient(to right, #0096FF 0%, #004AC2 30%, #004AC2 100%)" unit="g" />
-        <MacroBar label="Fat" value={fat} goal={fatGoal} gradient="linear-gradient(to right, #2DCAEF 0%, #0096FF 30%, #0096FF 100%)" unit="g" />
+        <MacroBar label="Protein" value={protein} goal={proteinGoal} color="bg-[#004AC2]" unit="g" />
+        <MacroBar label="Carbs" value={carbs} goal={carbsGoal} color="bg-[#0096FF]" unit="g" />
+        <MacroBar label="Fat" value={fat} goal={fatGoal} color="bg-[#2DCAEF]" unit="g" />
       </div>
     </div>
   );
 }
 
-function MacroBar({ label, value, goal, gradient, unit }: { label: string; value: number; goal: number; gradient: string; unit: string }) {
+function MacroBar({ label, value, goal, color, unit }: { label: string; value: number; goal: number; color: string; unit: string }) {
   const percent = Math.min((value / goal) * 100, 100);
   return (
     <div>
@@ -103,8 +96,8 @@ function MacroBar({ label, value, goal, gradient, unit }: { label: string; value
       </div>
       <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${percent}%`, backgroundImage: gradient }}
+          className={cn('h-full rounded-full transition-all duration-500', color)}
+          style={{ width: `${percent}%` }}
         />
       </div>
     </div>
