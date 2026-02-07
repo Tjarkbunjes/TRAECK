@@ -30,7 +30,7 @@ export default function AnalyticsPage() {
   const { workouts, sets, loading: workoutLoading } = useAnalyticsWorkouts(days);
   const { dailyFood, loading: foodLoading } = useAnalyticsFood(days);
 
-  const [radarMode, setRadarMode] = useState<'sets' | 'reps'>('sets');
+  const [radarMode, setRadarMode] = useState<'weight' | 'reps'>('weight');
   const [category, setCategory] = useState<Category>('all');
 
   // Weight stats
@@ -206,10 +206,10 @@ export default function AnalyticsPage() {
                   <CardTitle className="text-base">total {radarMode}</CardTitle>
                   <div className="flex rounded-md border border-[#292929] overflow-hidden">
                     <button
-                      onClick={() => setRadarMode('sets')}
-                      className={`px-3 py-1 text-xs transition-colors ${radarMode === 'sets' ? 'bg-[#2626FF] text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                      onClick={() => setRadarMode('weight')}
+                      className={`px-3 py-1 text-xs transition-colors ${radarMode === 'weight' ? 'bg-[#2626FF] text-white' : 'text-muted-foreground hover:text-foreground'}`}
                     >
-                      sets
+                      weight
                     </button>
                     <button
                       onClick={() => setRadarMode('reps')}
