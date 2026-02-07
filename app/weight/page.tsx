@@ -130,7 +130,7 @@ export default function WeightPage() {
         <CardContent className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Weight (kg)</Label>
+              <Label>weight (kg)</Label>
               <Input
                 type="number"
                 step="0.1"
@@ -140,7 +140,7 @@ export default function WeightPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Body Fat % (optional)</Label>
+              <Label>body fat % (optional)</Label>
               <Input
                 type="number"
                 step="0.1"

@@ -78,19 +78,19 @@ export function WeightChart({ entries, targetWeight }: WeightChartProps) {
           itemStyle={{ color: '#fff' }}
           formatter={(value: number | undefined, name: string | undefined) => [
             `${value ?? 0} kg`,
-            name === 'weight' ? 'Weight' : '7d Avg',
+            name === 'weight' ? 'weight' : '7d avg',
           ]}
         />
         {targetWeight && (
           <ReferenceLine
             y={targetWeight}
-            stroke="#facc15"
+            stroke="#2626FF"
             strokeDasharray="6 4"
             strokeOpacity={0.7}
             label={{
-              value: `Goal: ${targetWeight}kg`,
+              value: `goal: ${targetWeight}kg`,
               position: 'right',
-              style: { fontSize: 10, fill: '#facc15' },
+              style: { fontSize: 10, fill: '#2626FF' },
             }}
           />
         )}
@@ -99,14 +99,14 @@ export function WeightChart({ entries, targetWeight }: WeightChartProps) {
           dataKey="weight"
           stroke="rgba(255,255,255,0.4)"
           strokeWidth={1}
-          dot={{ r: 4, fill: '#0096FF', stroke: '#0096FF' }}
-          activeDot={{ r: 6, fill: '#0096FF' }}
+          dot={{ r: 4, fill: '#2DCAEF', stroke: '#2DCAEF' }}
+          activeDot={{ r: 6, fill: '#2DCAEF' }}
           name="weight"
         />
         <Line
           type="monotone"
           dataKey="average"
-          stroke="#0096FF"
+          stroke="#2DCAEF"
           strokeWidth={2.5}
           dot={false}
           name="average"
@@ -115,13 +115,13 @@ export function WeightChart({ entries, targetWeight }: WeightChartProps) {
     </ResponsiveContainer>
     <div className="flex items-center justify-center gap-4 mt-2 text-xs">
       <div className="flex items-center gap-1.5">
-        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#0096FF]" />
-        <span className="text-[#d4d4d4]">Weight / 7d Avg</span>
+        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#2DCAEF]" />
+        <span className="text-[#d4d4d4]">weight / 7d avg</span>
       </div>
       {targetWeight && (
         <div className="flex items-center gap-1.5">
-          <span className="inline-block h-0.5 w-4 bg-[#facc15]" style={{ borderTop: '2px dashed #facc15', background: 'none' }} />
-          <span className="text-[#d4d4d4]">Goal ({targetWeight}kg)</span>
+          <span className="inline-block h-0.5 w-4 bg-[#2626FF]" style={{ borderTop: '2px dashed #2626FF', background: 'none' }} />
+          <span className="text-[#d4d4d4]">goal ({targetWeight}kg)</span>
         </div>
       )}
     </div>
