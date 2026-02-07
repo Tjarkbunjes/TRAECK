@@ -98,16 +98,16 @@ function ScanPageInner() {
                 <p className="text-xs text-muted-foreground">kcal</p>
               </div>
               <div>
-                <p className="text-xl font-bold font-mono text-[#3DFBB0]">{Math.round(product.protein_per_100g)}</p>
+                <p className="text-xl font-bold font-mono text-[#0096FF]">{Math.round(product.protein_per_100g)}</p>
                 <p className="text-xs text-muted-foreground">Protein</p>
               </div>
               <div>
-                <p className="text-xl font-bold font-mono text-[#6CB4EE]">{Math.round(product.carbs_per_100g)}</p>
+                <p className="text-xl font-bold font-mono text-[#2DCAEF]">{Math.round(product.carbs_per_100g)}</p>
                 <p className="text-xs text-muted-foreground">Carbs</p>
                 <p className="text-[10px] text-muted-foreground">sugar: {Math.round(product.sugar_per_100g || 0)}g</p>
               </div>
               <div>
-                <p className="text-xl font-bold font-mono text-[#FFB224]">{Math.round(product.fat_per_100g)}</p>
+                <p className="text-xl font-bold font-mono text-[#8062FA]">{Math.round(product.fat_per_100g)}</p>
                 <p className="text-xs text-muted-foreground">Fat</p>
                 <p className="text-[10px] text-muted-foreground">sat: {Math.round(product.saturated_fat_per_100g || 0)}g</p>
               </div>

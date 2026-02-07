@@ -75,9 +75,9 @@ export function MacroRings({
 
       {/* Macro Bars */}
       <div className="flex-1 space-y-3">
-        <MacroBar label="Protein" value={protein} goal={proteinGoal} color="bg-[#3DFBB0]" unit="g" />
-        <MacroBar label="Carbs" value={carbs} goal={carbsGoal} color="bg-[#6CB4EE]" unit="g" />
-        <MacroBar label="Fat" value={fat} goal={fatGoal} color="bg-[#FFB224]" unit="g" />
+        <MacroBar label="Protein" value={protein} goal={proteinGoal} color="bg-[#0096FF]" unit="g" />
+        <MacroBar label="Carbs" value={carbs} goal={carbsGoal} color="bg-[#2DCAEF]" unit="g" />
+        <MacroBar label="Fat" value={fat} goal={fatGoal} color="bg-[#8062FA]" unit="g" />
       </div>
     </div>
   );

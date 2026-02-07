@@ -317,15 +317,15 @@ export default function MealsPage() {
                     <p className="text-muted-foreground">kcal</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold font-mono text-[#3DFBB0]">{Math.round(totals.protein)}</p>
+                    <p className="text-lg font-bold font-mono text-[#0096FF]">{Math.round(totals.protein)}</p>
                     <p className="text-muted-foreground">Protein</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold font-mono text-[#6CB4EE]">{Math.round(totals.carbs)}</p>
+                    <p className="text-lg font-bold font-mono text-[#2DCAEF]">{Math.round(totals.carbs)}</p>
                     <p className="text-muted-foreground">Carbs</p>
                   </div>
                   <div>
-                    <p className="text-lg font-bold font-mono text-[#FFB224]">{Math.round(totals.fat)}</p>
+                    <p className="text-lg font-bold font-mono text-[#8062FA]">{Math.round(totals.fat)}</p>
                     <p className="text-muted-foreground">Fat</p>
                   </div>
                 </div>

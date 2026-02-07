@@ -322,16 +322,16 @@ function AddFoodPageInner() {
                 <p className="text-muted-foreground">kcal</p>
               </div>
               <div>
-                <p className="text-lg font-bold font-mono text-[#3DFBB0]">{Math.round(calcValue(proteinPer100))}</p>
+                <p className="text-lg font-bold font-mono text-[#0096FF]">{Math.round(calcValue(proteinPer100))}</p>
                 <p className="text-muted-foreground">Protein</p>
               </div>
               <div>
-                <p className="text-lg font-bold font-mono text-[#6CB4EE]">{Math.round(calcValue(carbsPer100))}</p>
+                <p className="text-lg font-bold font-mono text-[#2DCAEF]">{Math.round(calcValue(carbsPer100))}</p>
                 <p className="text-muted-foreground">Carbs</p>
                 <p className="text-[10px] text-muted-foreground">sugar: {Math.round(calcValue(sugarPer100))}g</p>
               </div>
               <div>
-                <p className="text-lg font-bold font-mono text-[#FFB224]">{Math.round(calcValue(fatPer100))}</p>
+                <p className="text-lg font-bold font-mono text-[#8062FA]">{Math.round(calcValue(fatPer100))}</p>
                 <p className="text-muted-foreground">Fat</p>
                 <p className="text-[10px] text-muted-foreground">sat: {Math.round(calcValue(saturatedFatPer100))}g</p>
               </div>

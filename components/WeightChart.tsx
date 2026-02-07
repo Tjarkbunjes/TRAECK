@@ -99,14 +99,14 @@ export function WeightChart({ entries, targetWeight }: WeightChartProps) {
           dataKey="weight"
           stroke="rgba(255,255,255,0.4)"
           strokeWidth={1}
-          dot={{ r: 4, fill: '#4ade80', stroke: '#4ade80' }}
-          activeDot={{ r: 6, fill: '#4ade80' }}
+          dot={{ r: 4, fill: '#0096FF', stroke: '#0096FF' }}
+          activeDot={{ r: 6, fill: '#0096FF' }}
           name="weight"
         />
         <Line
           type="monotone"
           dataKey="average"
-          stroke="#4ade80"
+          stroke="#0096FF"
           strokeWidth={2.5}
           dot={false}
           name="average"
@@ -115,7 +115,7 @@ export function WeightChart({ entries, targetWeight }: WeightChartProps) {
     </ResponsiveContainer>
     <div className="flex items-center justify-center gap-4 mt-2 text-xs">
       <div className="flex items-center gap-1.5">
-        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#4ade80]" />
+        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#0096FF]" />
         <span className="text-[#d4d4d4]">Weight / 7d Avg</span>
       </div>
       {targetWeight && (
