@@ -35,6 +35,7 @@ function ScanPageInner() {
     setScanning(false);
     setLoading(true);
     setScannedBarcode(barcode);
+    if ('vibrate' in navigator) navigator.vibrate(50);
 
     const result = await lookupBarcode(barcode);
 
@@ -88,9 +89,24 @@ function ScanPageInner() {
       {!scanning && !loading && product && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">{product.name}</CardTitle>
+            <div className="flex items-center gap-3">
+              {product.image_url && (
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  className="w-16 h-16 object-contain rounded"
+                />
+              )}
+              <CardTitle className="text-lg">{product.name}</CardTitle>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
+            {(product.calories_per_100g === 0 ||
+              (product.protein_per_100g === 0 && product.carbs_per_100g === 0 && product.fat_per_100g === 0)) && (
+              <p className="text-xs text-amber-600 bg-amber-500/10 border border-amber-500/20 rounded p-2">
+                nutrition data may be incomplete — please verify
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">nutrition per 100g:</p>
             <div className="grid grid-cols-4 gap-2 text-center">
               <div>

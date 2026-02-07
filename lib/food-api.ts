@@ -1,27 +1,9 @@
-import { db } from './db';
 import type { FoodProduct } from './types';
 
 const OFF_BASE = 'https://world.openfoodfacts.org/api/v2/product';
 const OFF_HEADERS = { 'User-Agent': 'TRAECK/1.0 (traeck-pwa)' };
 
 export async function lookupBarcode(barcode: string): Promise<FoodProduct | null> {
-  // 1. Check IndexedDB cache
-  const cached = await db.cachedProducts.get(barcode);
-  if (cached) {
-    return {
-      name: cached.name,
-      barcode: cached.barcode,
-      calories_per_100g: cached.calories_per_100g,
-      protein_per_100g: cached.protein_per_100g,
-      carbs_per_100g: cached.carbs_per_100g,
-      fat_per_100g: cached.fat_per_100g,
-      sugar_per_100g: cached.sugar_per_100g || 0,
-      saturated_fat_per_100g: cached.saturated_fat_per_100g || 0,
-      serving_size: cached.serving_size,
-    };
-  }
-
-  // 2. Open Food Facts API
   try {
     const res = await fetch(`${OFF_BASE}/${barcode}.json`, { headers: OFF_HEADERS });
     const data = await res.json();
@@ -37,13 +19,8 @@ export async function lookupBarcode(barcode: string): Promise<FoodProduct | null
         sugar_per_100g: p.nutriments?.sugars_100g || 0,
         saturated_fat_per_100g: p.nutriments?.['saturated-fat_100g'] || 0,
         serving_size: p.serving_size || undefined,
+        image_url: p.image_front_small_url || p.image_front_url || undefined,
       };
-
-      // Cache in IndexedDB
-      await db.cachedProducts.put({
-        ...product,
-        cached_at: Date.now(),
-      });
 
       return product;
     }
@@ -65,8 +42,8 @@ export async function lookupBarcode(barcode: string): Promise<FoodProduct | null
           sugar_per_100g: p.nutriments?.sugars_100g || 0,
           saturated_fat_per_100g: p.nutriments?.['saturated-fat_100g'] || 0,
           serving_size: p.serving_size || undefined,
+          image_url: p.image_front_small_url || p.image_front_url || undefined,
         };
-        await db.cachedProducts.put({ ...product, cached_at: Date.now() });
         return product;
       }
     }
@@ -94,6 +71,8 @@ export async function searchFood(query: string): Promise<FoodProduct[]> {
           protein_per_100g: (p.nutriments as Record<string, number>)?.proteins_100g || 0,
           carbs_per_100g: (p.nutriments as Record<string, number>)?.carbohydrates_100g || 0,
           fat_per_100g: (p.nutriments as Record<string, number>)?.fat_100g || 0,
+          sugar_per_100g: (p.nutriments as Record<string, number>)?.sugars_100g || 0,
+          saturated_fat_per_100g: (p.nutriments as Record<string, number>)?.['saturated-fat_100g'] || 0,
         }));
     }
   } catch {

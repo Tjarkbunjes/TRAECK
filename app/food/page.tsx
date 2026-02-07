@@ -141,9 +141,11 @@ export default function FoodPage() {
             add
           </Link>
         </Button>
-        <Button variant="outline" className="h-11 flex-col gap-0" disabled>
-          <ScanBarcode className="h-4 w-4" />
-          <span className="text-[9px] text-muted-foreground">coming soon</span>
+        <Button asChild variant="outline" className="h-11">
+          <Link href={`/food/scan?date=${date}`}>
+            <ScanBarcode className="mr-1.5 h-4 w-4" />
+            scan
+          </Link>
         </Button>
         <Button asChild variant="outline" className="h-11">
           <Link href="/food/meals">
