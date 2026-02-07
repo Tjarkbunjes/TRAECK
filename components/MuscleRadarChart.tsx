@@ -38,7 +38,7 @@ export function MuscleRadarChart({ sets, mode }: MuscleRadarChartProps) {
       if (!mg || !totals.has(mg)) continue;
 
       if (mode === 'weight') {
-        totals.set(mg, totals.get(mg)! + (set.weight_kg ?? 0));
+        totals.set(mg, Math.max(totals.get(mg)!, set.weight_kg ?? 0));
       } else {
         totals.set(mg, totals.get(mg)! + (set.reps ?? 0));
       }
