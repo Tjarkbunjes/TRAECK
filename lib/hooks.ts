@@ -154,7 +154,7 @@ async function ensureProfile(u: { id: string; email?: string; user_metadata?: Re
         carbs_goal: 250,
         fat_goal: 70,
       });
-    } else if (!existing.email && u.email) {
+    } else if (u.email && existing.email !== u.email) {
       await supabase.from('profiles').update({ email: u.email }).eq('id', u.id);
     }
   } catch { /* ignore */ }

@@ -195,8 +195,8 @@ export default function FriendsPage() {
                 >
                   <CardContent className="p-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium">{fp?.email || '?'}</p>
-                      <p className="text-xs text-muted-foreground">{displayName}</p>
+                      <p className="text-sm font-medium">{fp?.email || displayName}</p>
+                      {fp?.email && <p className="text-xs text-muted-foreground">{displayName}</p>}
                     </div>
                     {isExpanded ? (
                       <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
