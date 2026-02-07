@@ -244,7 +244,7 @@ export default function HomePage() {
                       <div key={i} className="flex-1 text-center space-y-1">
                         <div className={`h-7 rounded-[5px] flex items-center justify-center border border-[#292929] ${kcal ? 'bg-[#2626FF]' : 'bg-[#222222]'}`}>
                           {kcal ? (
-                            <span className="text-xs font-extrabold text-white font-mono">{Math.round(kcal)}</span>
+                            <span className="text-xs font-normal text-white font-mono">{Math.round(kcal)}</span>
                           ) : null}
                         </div>
                         <span className="text-[9px] text-muted-foreground">{label}</span>
@@ -268,7 +268,7 @@ export default function HomePage() {
                       <div key={i} className="flex-1 text-center space-y-1">
                         <div className={`h-7 rounded-[5px] flex items-center justify-center border border-[#292929] ${name ? 'bg-[#2626FF]' : 'bg-[#222222]'}`}>
                           {name ? (
-                            <span className="text-xs font-extrabold text-white truncate px-1">{name.replace(' Day', '')}</span>
+                            <span className="text-xs font-normal text-white truncate px-1">{name.replace(' Day', '')}</span>
                           ) : null}
                         </div>
                         <span className="text-[9px] text-muted-foreground">{label}</span>
@@ -292,7 +292,7 @@ export default function HomePage() {
                       <div key={i} className="flex-1 text-center space-y-1">
                         <div className={`h-7 rounded-[5px] flex items-center justify-center border border-[#292929] ${kg ? 'bg-[#2626FF]' : 'bg-[#222222]'}`}>
                           {kg ? (
-                            <span className="text-xs font-extrabold text-white font-mono">{kg}</span>
+                            <span className="text-xs font-normal text-white font-mono">{kg}</span>
                           ) : null}
                         </div>
                         <span className="text-[9px] text-muted-foreground">{label}</span>
