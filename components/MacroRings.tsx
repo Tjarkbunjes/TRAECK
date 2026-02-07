@@ -31,7 +31,8 @@ export function MacroRings({
   const radius = (ringSize - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (calPercent / 100) * circumference;
-  const remaining = Math.max(calorieGoal - calories, 0);
+  const over = calories > calorieGoal;
+  const remaining = over ? calories - calorieGoal : calorieGoal - calories;
 
   return (
     <div className="flex items-center gap-6">
@@ -52,23 +53,23 @@ export function MacroRings({
             cy={ringSize / 2}
             r={radius}
             fill="none"
-            stroke={calories > calorieGoal ? 'currentColor' : '#2626FF'}
+            stroke={over ? 'currentColor' : '#2626FF'}
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
             strokeDashoffset={offset}
             strokeLinecap="round"
             className={cn(
               'transition-all duration-500',
-              calories > calorieGoal && 'text-destructive'
+              over && 'text-destructive'
             )}
           />
         </svg>
         <div className="absolute flex flex-col items-center">
           <span className={cn('font-bold font-mono', size === 'lg' ? 'text-2xl' : 'text-lg')}>
-            {Math.round(remaining)}
+            {over ? `-${Math.round(remaining)}` : Math.round(remaining)}
           </span>
           <span className={cn('text-muted-foreground', size === 'lg' ? 'text-xs' : 'text-[10px]')}>
-            left
+            {over ? 'over' : 'left'}
           </span>
         </div>
       </div>
