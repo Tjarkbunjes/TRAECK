@@ -195,8 +195,8 @@ export default function FriendsPage() {
                 >
                   <CardContent className="p-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium">{fp?.email || displayName}</p>
-                      {fp?.email && <p className="text-xs text-muted-foreground">{displayName}</p>}
+                      <p className="text-sm font-medium">{displayName}</p>
+                      <p className="text-xs text-muted-foreground">{fp?.email || ''}</p>
                     </div>
                     {isExpanded ? (
                       <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -393,12 +393,12 @@ function FriendDashboard({
                   return (
                     <div
                       key={wi}
-                      className={`flex-1 min-w-[8px] aspect-square rounded-[2px] ${
+                      className={`flex-1 min-w-[8px] aspect-square rounded-[2px] border ${
                         isFuture
-                          ? 'bg-transparent'
+                          ? 'bg-transparent border-transparent'
                           : hasWorkout
-                          ? 'bg-[#2626FF]'
-                          : 'bg-muted/20'
+                          ? 'bg-[#2626FF] border-[#2626FF]'
+                          : 'bg-muted/20 border-muted/40'
                       }`}
                       title={hasWorkout ? `${day.dayStr}: ${day.workout?.name || 'workout'}` : day?.dayStr}
                     />
