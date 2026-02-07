@@ -112,6 +112,7 @@ export interface FoodProduct {
   sugar_per_100g?: number;
   saturated_fat_per_100g?: number;
   serving_size?: string;
+  image_url?: string;
 }
 
 export interface Exercise {
