@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { Mail } from 'lucide-react';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -15,16 +15,20 @@ export default function SignupPage() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: { display_name: displayName || null },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     if (signUpError) {
@@ -33,18 +37,38 @@ export default function SignupPage() {
       return;
     }
 
-    if (data.user) {
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        display_name: displayName || null,
-        calorie_goal: 2000,
-        protein_goal: 150,
-        carbs_goal: 250,
-        fat_goal: 70,
-      });
-      router.push('/');
-    }
+    setConfirmationSent(true);
     setLoading(false);
+  }
+
+  if (confirmationSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Mail className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-xl">check your email.</CardTitle>
+            <CardDescription>
+              we sent a confirmation link to <span className="font-medium text-foreground">{email}</span>. click the link to activate your account.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-center text-xs text-muted-foreground">
+              didn&apos;t receive it? check your spam folder.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setConfirmationSent(false)}
+            >
+              try again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

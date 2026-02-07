@@ -134,6 +134,29 @@ export function useLastSets(exerciseName: string) {
   return sets;
 }
 
+// Fire-and-forget: create profile on first sign-in after email confirmation
+async function ensureProfile(u: { id: string; user_metadata?: Record<string, unknown> }) {
+  try {
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', u.id)
+      .single();
+
+    if (!existing) {
+      const displayName = (u.user_metadata?.display_name as string) || null;
+      await supabase.from('profiles').insert({
+        id: u.id,
+        display_name: displayName,
+        calorie_goal: 2000,
+        protein_goal: 150,
+        carbs_goal: 250,
+        fat_goal: 70,
+      });
+    }
+  } catch { /* ignore */ }
+}
+
 export function useAuth() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,8 +167,12 @@ export function useAuth() {
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ? { id: session.user.id, email: session.user.email } : null);
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        ensureProfile(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
