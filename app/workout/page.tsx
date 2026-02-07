@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useWorkouts } from '@/lib/hooks';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,6 +26,7 @@ export default function WorkoutPage() {
   const [workoutSets, setWorkoutSets] = useState<Record<string, WorkoutSet[]>>({});
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showStartDialog, setShowStartDialog] = useState(false);
+  const [workoutDate, setWorkoutDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const router = useRouter();
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function WorkoutPage() {
       .from('workouts')
       .insert({
         user_id: user.id,
-        date: format(new Date(), 'yyyy-MM-dd'),
+        date: workoutDate,
       })
       .select()
       .single();
@@ -63,7 +65,7 @@ export default function WorkoutPage() {
       .from('workouts')
       .insert({
         user_id: user.id,
-        date: format(new Date(), 'yyyy-MM-dd'),
+        date: workoutDate,
         name: template.name,
       })
       .select()
@@ -83,7 +85,7 @@ export default function WorkoutPage() {
       .from('workouts')
       .insert({
         user_id: user.id,
-        date: format(new Date(), 'yyyy-MM-dd'),
+        date: workoutDate,
         name: template.name,
       })
       .select()
@@ -165,7 +167,7 @@ export default function WorkoutPage() {
     <div className="mx-auto max-w-md p-4 space-y-4">
       <h1 className="text-2xl font-bold">workout</h1>
 
-      <Button onClick={() => setShowStartDialog(true)} className="w-full h-14 text-lg">
+      <Button onClick={() => { setWorkoutDate(format(new Date(), 'yyyy-MM-dd')); setShowStartDialog(true); }} className="w-full h-14 text-lg">
         <Plus className="mr-2 h-5 w-5" />
         start workout
       </Button>
@@ -176,6 +178,13 @@ export default function WorkoutPage() {
             <DialogTitle>start workout</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
+            <Input
+              type="date"
+              value={workoutDate}
+              max={format(new Date(), 'yyyy-MM-dd')}
+              onChange={(e) => setWorkoutDate(e.target.value)}
+              className="text-sm"
+            />
             <Button
               variant="outline"
               className="w-full h-12 justify-start text-left"
@@ -363,7 +372,7 @@ export default function WorkoutPage() {
           )}
 
           {/* TRÆCK standard templates */}
-          <div className="text-xs text-muted-foreground pt-2 pb-1">tr&aelig;ck templates</div>
+          <div className="text-xs text-muted-foreground pt-2 pb-1">TR&AElig;CK templates</div>
           {DEFAULT_TEMPLATES.map((t) => (
             <Card key={t.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => startFromDefault(t)}>
               <CardContent className="p-3 flex items-center justify-between">

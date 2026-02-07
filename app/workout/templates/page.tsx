@@ -225,7 +225,7 @@ function TemplatesPage() {
 
           {/* TRÆCK standard templates */}
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground pt-1 pb-0.5">tr&aelig;ck templates</p>
+            <p className="text-xs text-muted-foreground pt-1 pb-0.5">TR&AElig;CK templates</p>
             {DEFAULT_TEMPLATES.map((t) => (
               <Card key={t.id} className="border-[#2626FF]/20">
                 <CardContent className="p-3">
