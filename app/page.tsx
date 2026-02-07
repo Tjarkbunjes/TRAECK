@@ -7,7 +7,9 @@ import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile } fr
 import { MacroRings } from '@/components/MacroRings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Scale, Utensils, TrendingUp, User, Users } from 'lucide-react';
+import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -22,6 +24,9 @@ export default function HomePage() {
   const [weeklyFood, setWeeklyFood] = useState<Map<number, number>>(new Map());
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Map<number, string>>(new Map());
   const [weeklyWeight, setWeeklyWeight] = useState<Map<number, number>>(new Map());
+  const [weightDialogOpen, setWeightDialogOpen] = useState(false);
+  const [quickWeight, setQuickWeight] = useState('');
+  const [savingWeight, setSavingWeight] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -109,6 +114,22 @@ export default function HomePage() {
   const latestWeight = weightEntries.length > 0 ? weightEntries[weightEntries.length - 1] : null;
   const lastWorkout = workouts.length > 0 ? workouts[0] : null;
 
+  async function handleQuickWeight() {
+    if (!user || !quickWeight) return;
+    setSavingWeight(true);
+    await supabase.from('weight_entries').upsert(
+      {
+        user_id: user.id,
+        date: format(new Date(), 'yyyy-MM-dd'),
+        weight_kg: parseFloat(quickWeight),
+      },
+      { onConflict: 'user_id,date' }
+    );
+    setSavingWeight(false);
+    setWeightDialogOpen(false);
+    setQuickWeight('');
+  }
+
   if (authLoading) {
     return <div className="flex h-screen items-center justify-center"><span className="text-muted-foreground">loading...</span></div>;
   }
@@ -152,33 +173,60 @@ export default function HomePage() {
       )}
 
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 gap-2">
-        <Button asChild className="h-14" variant="outline">
-          <Link href="/food/add">
-            <Utensils className="mr-2 h-5 w-5" />
-            log food
-          </Link>
+      {/* Quick Add */}
+      <div className="grid grid-cols-3 gap-2">
+        <Button className="h-14 flex-col gap-1" variant="outline" onClick={() => router.push('/food/add')}>
+          <div className="flex items-center gap-1">
+            <Plus className="h-3.5 w-3.5" />
+            <Utensils className="h-4 w-4" />
+          </div>
+          <span className="text-[10px]">food</span>
         </Button>
-        <Button asChild className="h-14" variant="outline">
-          <Link href="/workout">
-            <Dumbbell className="mr-2 h-5 w-5" />
-            workout
-          </Link>
+        <Button className="h-14 flex-col gap-1" variant="outline" onClick={() => router.push('/workout')}>
+          <div className="flex items-center gap-1">
+            <Plus className="h-3.5 w-3.5" />
+            <Dumbbell className="h-4 w-4" />
+          </div>
+          <span className="text-[10px]">workout</span>
         </Button>
-        <Button asChild className="h-14" variant="outline">
-          <Link href="/weight">
-            <Scale className="mr-2 h-5 w-5" />
-            weight
-          </Link>
-        </Button>
-        <Button asChild className="h-14" variant="outline">
-          <Link href="/friends">
-            <Users className="mr-2 h-5 w-5" />
-            friends
-          </Link>
+        <Button className="h-14 flex-col gap-1" variant="outline" onClick={() => setWeightDialogOpen(true)}>
+          <div className="flex items-center gap-1">
+            <Plus className="h-3.5 w-3.5" />
+            <Scale className="h-4 w-4" />
+          </div>
+          <span className="text-[10px]">weight</span>
         </Button>
       </div>
+
+      {/* Weight Quick Add Dialog */}
+      <Dialog open={weightDialogOpen} onOpenChange={setWeightDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>log weight</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                step="0.1"
+                placeholder={latestWeight ? `${latestWeight.weight_kg}` : '75.0'}
+                value={quickWeight}
+                onChange={(e) => setQuickWeight(e.target.value)}
+                className="text-lg font-mono"
+                autoFocus
+              />
+              <span className="text-muted-foreground text-sm">kg</span>
+            </div>
+            <Button
+              className="w-full"
+              onClick={handleQuickWeight}
+              disabled={!quickWeight || savingWeight}
+            >
+              {savingWeight ? 'saving...' : 'save'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Weekly Consistency */}
       {(() => {
