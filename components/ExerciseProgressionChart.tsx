@@ -27,13 +27,13 @@ export function ExerciseProgressionChart({ exerciseName, workouts, sets }: Exerc
     }
 
     // Group sets for this exercise by workout date
-    const perWorkout = new Map<string, { volume: number; reps: number }>();
+    const perWorkout = new Map<string, { weight: number; reps: number }>();
     for (const s of sets) {
       if (s.exercise_name !== exerciseName) continue;
       const date = workoutDateMap.get(s.workout_id);
       if (!date) continue;
-      const existing = perWorkout.get(date) || { volume: 0, reps: 0 };
-      existing.volume += (s.weight_kg ?? 0) * (s.reps ?? 0);
+      const existing = perWorkout.get(date) || { weight: 0, reps: 0 };
+      existing.weight = Math.max(existing.weight, s.weight_kg ?? 0);
       existing.reps += s.reps ?? 0;
       perWorkout.set(date, existing);
     }
@@ -42,7 +42,7 @@ export function ExerciseProgressionChart({ exerciseName, workouts, sets }: Exerc
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([date, data]) => ({
         label: format(new Date(date + 'T12:00:00'), 'MMM d'),
-        volume: Math.round(data.volume),
+        weight: data.weight,
         reps: data.reps,
       }));
   }, [exerciseName, workouts, sets]);
@@ -63,12 +63,12 @@ export function ExerciseProgressionChart({ exerciseName, workouts, sets }: Exerc
             interval="preserveStartEnd"
           />
           <YAxis
-            yAxisId="volume"
+            yAxisId="weight"
             tick={{ fontSize: 10, fill: '#d4d4d4' }}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v) => `${(v / 1000).toFixed(0)}t`}
-            width={30}
+            tickFormatter={(v) => `${v}kg`}
+            width={35}
           />
           <YAxis
             yAxisId="reps"
@@ -88,14 +88,14 @@ export function ExerciseProgressionChart({ exerciseName, workouts, sets }: Exerc
             }}
             labelStyle={{ color: '#fff' }}
             formatter={(value: number | undefined, name: string | undefined) => [
-              name === 'volume' ? `${(value ?? 0).toLocaleString()} kg` : `${value ?? 0}`,
-              name === 'volume' ? 'volume' : 'reps',
+              name === 'weight' ? `${value ?? 0} kg` : `${value ?? 0}`,
+              name === 'weight' ? 'weight' : 'reps',
             ]}
           />
           <Line
-            yAxisId="volume"
+            yAxisId="weight"
             type="monotone"
-            dataKey="volume"
+            dataKey="weight"
             stroke="#2DCAEF"
             strokeWidth={2}
             dot={{ r: 2.5, fill: '#2DCAEF', stroke: '#2DCAEF' }}
@@ -116,7 +116,7 @@ export function ExerciseProgressionChart({ exerciseName, workouts, sets }: Exerc
       <div className="flex items-center justify-center gap-4 text-[10px]">
         <div className="flex items-center gap-1">
           <span className="inline-block h-2 w-2 rounded-full bg-[#2DCAEF]" />
-          <span className="text-[#d4d4d4]">volume</span>
+          <span className="text-[#d4d4d4]">weight</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="inline-block h-0.5 w-3 bg-[#2626FF]" style={{ borderTop: '2px dashed #2626FF', background: 'none' }} />

@@ -281,34 +281,34 @@ function AddFoodPageInner() {
 
         <div className="space-y-2">
           <Label>Serving (g)</Label>
-          <Input type="number" value={servingGrams} onChange={(e) => setServingGrams(Number(e.target.value))} />
+          <Input type="number" value={servingGrams || ''} onChange={(e) => setServingGrams(Number(e.target.value))} />
         </div>
 
         <p className="text-xs text-muted-foreground">nutrition per 100g:</p>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">Calories</Label>
-            <Input type="number" value={caloriesPer100} onChange={(e) => setCaloriesPer100(Number(e.target.value))} />
+            <Input type="number" value={caloriesPer100 || ''} onChange={(e) => setCaloriesPer100(Number(e.target.value))} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Protein (g)</Label>
-            <Input type="number" value={proteinPer100} onChange={(e) => setProteinPer100(Number(e.target.value))} />
+            <Input type="number" value={proteinPer100 || ''} onChange={(e) => setProteinPer100(Number(e.target.value))} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Carbs (g)</Label>
-            <Input type="number" value={carbsPer100} onChange={(e) => setCarbsPer100(Number(e.target.value))} />
+            <Input type="number" value={carbsPer100 || ''} onChange={(e) => setCarbsPer100(Number(e.target.value))} />
           </div>
           <div className="space-y-1 pl-3 border-l-2 border-amber-500/30">
             <Label className="text-xs text-muted-foreground">of which sugar (g)</Label>
-            <Input type="number" value={sugarPer100} onChange={(e) => setSugarPer100(Number(e.target.value))} />
+            <Input type="number" value={sugarPer100 || ''} onChange={(e) => setSugarPer100(Number(e.target.value))} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Fat (g)</Label>
-            <Input type="number" value={fatPer100} onChange={(e) => setFatPer100(Number(e.target.value))} />
+            <Input type="number" value={fatPer100 || ''} onChange={(e) => setFatPer100(Number(e.target.value))} />
           </div>
           <div className="space-y-1 pl-3 border-l-2 border-rose-500/30">
             <Label className="text-xs text-muted-foreground">of which saturated (g)</Label>
-            <Input type="number" value={saturatedFatPer100} onChange={(e) => setSaturatedFatPer100(Number(e.target.value))} />
+            <Input type="number" value={saturatedFatPer100 || ''} onChange={(e) => setSaturatedFatPer100(Number(e.target.value))} />
           </div>
         </div>
 
