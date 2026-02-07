@@ -21,6 +21,7 @@ export default function HomePage() {
   const { workouts } = useWorkouts();
   const [weeklyFood, setWeeklyFood] = useState<Map<number, number>>(new Map());
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Map<number, string>>(new Map());
+  const [weeklyWeight, setWeeklyWeight] = useState<Map<number, number>>(new Map());
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -75,6 +76,22 @@ export default function HomePage() {
             map.set(dateToDayIdx(w.date), w.name || 'Gym');
           }
           setWeeklyWorkouts(map);
+        }
+      });
+
+    // Weight per day
+    supabase
+      .from('weight_entries')
+      .select('date, weight_kg')
+      .eq('user_id', user.id)
+      .in('date', dates)
+      .then(({ data }) => {
+        if (data) {
+          const map = new Map<number, number>();
+          for (const w of data) {
+            map.set(dateToDayIdx(w.date), w.weight_kg);
+          }
+          setWeeklyWeight(map);
         }
       });
   }, [user]);
@@ -210,6 +227,30 @@ export default function HomePage() {
                         <div className={`h-7 rounded-[5px] flex items-center justify-center ${name ? 'bg-accent border border-dashed border-[#000082]' : 'bg-muted/20 border border-transparent'}`}>
                           {name ? (
                             <span className="text-xs font-extrabold text-white truncate px-1">{name.replace(' Day', '')}</span>
+                          ) : null}
+                        </div>
+                        <span className="text-[9px] text-muted-foreground">{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-sm font-medium flex items-center gap-1.5">
+                    <Scale className="h-4 w-4 text-white" />
+                    weight
+                  </span>
+                  <span className="text-xs text-muted-foreground">{weeklyWeight.size}/7 days</span>
+                </div>
+                <div className="flex gap-1.5">
+                  {dayLabels.map((label, i) => {
+                    const kg = weeklyWeight.get(i);
+                    return (
+                      <div key={i} className="flex-1 text-center space-y-1">
+                        <div className={`h-7 rounded-[5px] flex items-center justify-center ${kg ? 'bg-accent border border-dashed border-[#000082]' : 'bg-muted/20 border border-transparent'}`}>
+                          {kg ? (
+                            <span className="text-xs font-extrabold text-white font-mono">{kg}</span>
                           ) : null}
                         </div>
                         <span className="text-[9px] text-muted-foreground">{label}</span>
