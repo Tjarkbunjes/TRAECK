@@ -175,26 +175,20 @@ export default function HomePage() {
 
       {/* Quick Add */}
       <div className="grid grid-cols-3 gap-2">
-        <Button className="h-14 flex-col gap-1" variant="outline" onClick={() => router.push('/food/add')}>
-          <div className="flex items-center gap-1">
-            <Plus className="h-3.5 w-3.5" />
-            <Utensils className="h-4 w-4" />
-          </div>
-          <span className="text-[10px]">food</span>
+        <Button className="h-14 relative" variant="outline" onClick={() => router.push('/food/add')}>
+          <Plus className="h-3 w-3 absolute top-1.5 left-1.5 text-muted-foreground" />
+          <Utensils className="mr-2 h-5 w-5" />
+          food
         </Button>
-        <Button className="h-14 flex-col gap-1" variant="outline" onClick={() => router.push('/workout')}>
-          <div className="flex items-center gap-1">
-            <Plus className="h-3.5 w-3.5" />
-            <Dumbbell className="h-4 w-4" />
-          </div>
-          <span className="text-[10px]">workout</span>
+        <Button className="h-14 relative" variant="outline" onClick={() => router.push('/workout')}>
+          <Plus className="h-3 w-3 absolute top-1.5 left-1.5 text-muted-foreground" />
+          <Dumbbell className="mr-2 h-5 w-5" />
+          workout
         </Button>
-        <Button className="h-14 flex-col gap-1" variant="outline" onClick={() => setWeightDialogOpen(true)}>
-          <div className="flex items-center gap-1">
-            <Plus className="h-3.5 w-3.5" />
-            <Scale className="h-4 w-4" />
-          </div>
-          <span className="text-[10px]">weight</span>
+        <Button className="h-14 relative" variant="outline" onClick={() => setWeightDialogOpen(true)}>
+          <Plus className="h-3 w-3 absolute top-1.5 left-1.5 text-muted-foreground" />
+          <Scale className="mr-2 h-5 w-5" />
+          weight
         </Button>
       </div>
 
