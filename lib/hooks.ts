@@ -210,9 +210,7 @@ export function useFriends() {
     );
 
     const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, display_name, email')
-      .in('id', friendIds);
+      .rpc('get_profiles_with_email', { p_user_ids: friendIds });
 
     const profileMap = new Map((profiles || []).map((p: { id: string; display_name: string | null; email: string | null }) => [p.id, p]));
 
@@ -256,9 +254,7 @@ export function useFriendRequests() {
     const requesterIds = pending.map(f => f.requester_id);
 
     const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, display_name, email')
-      .in('id', requesterIds);
+      .rpc('get_profiles_with_email', { p_user_ids: requesterIds });
 
     const profileMap = new Map((profiles || []).map((p: { id: string; display_name: string | null; email: string | null }) => [p.id, p]));
 

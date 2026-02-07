@@ -110,3 +110,17 @@ AS $$
   GROUP BY fe.date
   ORDER BY fe.date ASC;
 $$;
+
+-- 9. Function: get profiles with reliable email (falls back to auth.users)
+CREATE OR REPLACE FUNCTION get_profiles_with_email(p_user_ids uuid[])
+RETURNS TABLE(id uuid, display_name text, email text)
+LANGUAGE sql SECURITY DEFINER
+AS $$
+  SELECT p.id, p.display_name, COALESCE(p.email, u.email) as email
+  FROM profiles p
+  JOIN auth.users u ON u.id = p.id
+  WHERE p.id = ANY(p_user_ids);
+$$;
+
+-- 10. Backfill: sync emails from auth.users to profiles
+UPDATE profiles p SET email = u.email FROM auth.users u WHERE u.id = p.id AND p.email IS NULL;

@@ -152,10 +152,10 @@ export default function FriendsPage() {
               <div key={req.id} className="flex items-center justify-between p-2 rounded-md bg-muted/20">
                 <div>
                   <p className="text-sm font-medium">
-                    {req.friend_profile?.display_name || req.friend_profile?.email || 'unknown'}
+                    {req.friend_profile?.email || req.friend_profile?.display_name || 'unknown'}
                   </p>
-                  {req.friend_profile?.display_name && (
-                    <p className="text-xs text-muted-foreground">{req.friend_profile?.email}</p>
+                  {req.friend_profile?.email && req.friend_profile?.display_name && (
+                    <p className="text-xs text-muted-foreground">{req.friend_profile.display_name}</p>
                   )}
                 </div>
                 <div className="flex gap-1.5">
