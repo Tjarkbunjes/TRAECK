@@ -123,4 +123,17 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Primary gradient for default buttons */
+  [data-slot="button"][data-variant="default"] {
+    background-image: linear-gradient(135deg, #004AC2, #000082);
+  }
+  [data-slot="button"][data-variant="default"]:hover:not(:disabled) {
+    background-image: linear-gradient(135deg, #0055d4, #0000a0);
+  }
+
+  /* Secondary gradient utility */
+  .bg-gradient-secondary {
+    background-image: linear-gradient(135deg, #2626FF, #8062FA);
+  }
 }

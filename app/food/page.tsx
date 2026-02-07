@@ -128,8 +128,8 @@ export default function FoodPage() {
       {/* Sugar & Saturated Fat Summary */}
       {(totals.sugar > 0 || totals.saturated_fat > 0) && (
         <div className="flex justify-center gap-6 text-xs text-muted-foreground">
-          <span>of which sugar: <span className="font-medium font-mono text-amber-500">{Math.round(totals.sugar)}g</span></span>
-          <span>of which sat. fat: <span className="font-medium font-mono text-rose-500">{Math.round(totals.saturated_fat)}g</span></span>
+          <span>of which sugar: <span className="font-medium font-mono text-foreground">{Math.round(totals.sugar)}g</span></span>
+          <span>of which sat. fat: <span className="font-medium font-mono text-foreground">{Math.round(totals.saturated_fat)}g</span></span>
         </div>
       )}
 
