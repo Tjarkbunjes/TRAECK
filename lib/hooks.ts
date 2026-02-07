@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
-import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet } from './types';
+import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship } from './types';
 import { format } from 'date-fns';
 
 export function useProfile() {
@@ -135,11 +135,11 @@ export function useLastSets(exerciseName: string) {
 }
 
 // Fire-and-forget: create profile on first sign-in after email confirmation
-async function ensureProfile(u: { id: string; user_metadata?: Record<string, unknown> }) {
+async function ensureProfile(u: { id: string; email?: string; user_metadata?: Record<string, unknown> }) {
   try {
     const { data: existing } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, email')
       .eq('id', u.id)
       .single();
 
@@ -148,11 +148,14 @@ async function ensureProfile(u: { id: string; user_metadata?: Record<string, unk
       await supabase.from('profiles').insert({
         id: u.id,
         display_name: displayName,
+        email: u.email || null,
         calorie_goal: 2000,
         protein_goal: 150,
         carbs_goal: 250,
         fat_goal: 70,
       });
+    } else if (!existing.email && u.email) {
+      await supabase.from('profiles').update({ email: u.email }).eq('id', u.id);
     }
   } catch { /* ignore */ }
 }
@@ -179,4 +182,104 @@ export function useAuth() {
   }, []);
 
   return { user, loading };
+}
+
+export function useFriends() {
+  const [friends, setFriends] = useState<Friendship[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+
+    // Get accepted friendships where I'm either requester or addressee
+    const { data: asRequester } = await supabase
+      .from('friendships')
+      .select('*, profiles!friendships_addressee_id_fkey(id, display_name, email)')
+      .eq('requester_id', user.id)
+      .eq('status', 'accepted');
+
+    const { data: asAddressee } = await supabase
+      .from('friendships')
+      .select('*, profiles!friendships_requester_id_fkey(id, display_name, email)')
+      .eq('addressee_id', user.id)
+      .eq('status', 'accepted');
+
+    const all: Friendship[] = [
+      ...(asRequester || []).map((f: Record<string, unknown>) => ({
+        ...f,
+        profiles: f.profiles,
+      })) as Friendship[],
+      ...(asAddressee || []).map((f: Record<string, unknown>) => ({
+        ...f,
+        profiles: f.profiles,
+      })) as Friendship[],
+    ];
+
+    setFriends(all);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  return { friends, loading, refresh: load };
+}
+
+export function useFriendRequests() {
+  const [requests, setRequests] = useState<Friendship[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+
+    const { data } = await supabase
+      .from('friendships')
+      .select('*, profiles!friendships_requester_id_fkey(id, display_name, email)')
+      .eq('addressee_id', user.id)
+      .eq('status', 'pending');
+
+    setRequests((data || []) as Friendship[]);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  return { requests, loading, refresh: load };
+}
+
+export function useFriendWorkouts(friendId: string | null) {
+  const [workouts, setWorkouts] = useState<{ id: string; date: string; name: string | null; finished_at: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!friendId) { setWorkouts([]); return; }
+    setLoading(true);
+    supabase
+      .rpc('get_friend_workouts', { p_friend_id: friendId, p_days: 90 })
+      .then(({ data }) => {
+        setWorkouts(data || []);
+        setLoading(false);
+      });
+  }, [friendId]);
+
+  return { workouts, loading };
+}
+
+export function useFriendWeight(friendId: string | null) {
+  const [entries, setEntries] = useState<{ date: string; weight_kg: number }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!friendId) { setEntries([]); return; }
+    setLoading(true);
+    supabase
+      .rpc('get_friend_weight', { p_friend_id: friendId, p_days: 90 })
+      .then(({ data }) => {
+        setEntries(data || []);
+        setLoading(false);
+      });
+  }, [friendId]);
+
+  return { entries, loading };
 }

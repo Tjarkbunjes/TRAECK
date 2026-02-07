@@ -51,6 +51,7 @@ export default function ProfilePage() {
       .upsert({
         id: user.id,
         display_name: displayName || null,
+        email: user.email || null,
         calorie_goal: calorieGoal,
         protein_goal: proteinGoal,
         carbs_goal: carbsGoal,

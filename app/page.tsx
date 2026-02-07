@@ -7,7 +7,7 @@ import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile } fr
 import { MacroRings } from '@/components/MacroRings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Scale, Utensils, TrendingUp, Users } from 'lucide-react';
+import { Dumbbell, Scale, Utensils, TrendingUp, User, Users } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -99,13 +99,18 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-md p-4 space-y-4">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-[0.15em]">
-          {profile?.display_name ? `hey, ${profile.display_name}` : 'TRÆCK'}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {format(new Date(), 'EEEE, MMMM d, yyyy')}
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-[0.15em]">
+            {profile?.display_name ? `hey, ${profile.display_name}` : 'TRÆCK'}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {format(new Date(), 'EEEE, MMMM d, yyyy')}
+          </p>
+        </div>
+        <Link href="/profile" className="h-9 w-9 rounded-full bg-muted/50 flex items-center justify-center shrink-0 mt-0.5">
+          <User className="h-4 w-4 text-muted-foreground" />
+        </Link>
       </div>
 
       {/* Calorie Overview */}
@@ -150,10 +155,11 @@ export default function HomePage() {
             weight
           </Link>
         </Button>
-        <Button className="h-14 flex-col gap-0" variant="outline" disabled>
-          <Users className="h-5 w-5" />
-          <span>friends</span>
-          <span className="text-[9px] text-muted-foreground">coming soon</span>
+        <Button asChild className="h-14" variant="outline">
+          <Link href="/friends">
+            <Users className="mr-2 h-5 w-5" />
+            friends
+          </Link>
         </Button>
       </div>
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Utensils, Dumbbell, Scale, User } from 'lucide-react';
+import { Home, Utensils, Dumbbell, Scale, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -10,7 +10,7 @@ const navItems = [
   { href: '/food', label: 'food', icon: Utensils },
   { href: '/workout', label: 'workout', icon: Dumbbell },
   { href: '/weight', label: 'weight', icon: Scale },
-  { href: '/profile', label: 'profile', icon: User },
+  { href: '/friends', label: 'friends', icon: Users },
 ];
 
 export function BottomNav() {

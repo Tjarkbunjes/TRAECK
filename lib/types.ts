@@ -59,6 +59,20 @@ export interface WeightEntry {
   created_at: string;
 }
 
+export interface Friendship {
+  id: string;
+  requester_id: string;
+  addressee_id: string;
+  status: 'pending' | 'accepted';
+  created_at: string;
+  // Joined profile of the other person
+  profiles?: {
+    id: string;
+    display_name: string | null;
+    email: string | null;
+  };
+}
+
 export interface WorkoutTemplate {
   id: string;
   user_id: string;
