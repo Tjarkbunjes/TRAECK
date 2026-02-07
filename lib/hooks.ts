@@ -192,31 +192,39 @@ export function useFriends() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    // Get accepted friendships where I'm either requester or addressee
-    const { data: asRequester } = await supabase
+    const { data: friendships } = await supabase
       .from('friendships')
-      .select('*, profiles!friendships_addressee_id_fkey(id, display_name, email)')
-      .eq('requester_id', user.id)
-      .eq('status', 'accepted');
+      .select('*')
+      .eq('status', 'accepted')
+      .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
 
-    const { data: asAddressee } = await supabase
-      .from('friendships')
-      .select('*, profiles!friendships_requester_id_fkey(id, display_name, email)')
-      .eq('addressee_id', user.id)
-      .eq('status', 'accepted');
+    if (!friendships || friendships.length === 0) {
+      setFriends([]);
+      setLoading(false);
+      return;
+    }
 
-    const all: Friendship[] = [
-      ...(asRequester || []).map((f: Record<string, unknown>) => ({
+    // Get the friend's user ID (the other person)
+    const friendIds = friendships.map(f =>
+      f.requester_id === user.id ? f.addressee_id : f.requester_id
+    );
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, display_name, email')
+      .in('id', friendIds);
+
+    const profileMap = new Map((profiles || []).map((p: { id: string; display_name: string | null; email: string | null }) => [p.id, p]));
+
+    const result: Friendship[] = friendships.map(f => {
+      const friendId = f.requester_id === user.id ? f.addressee_id : f.requester_id;
+      return {
         ...f,
-        profiles: f.profiles,
-      })) as Friendship[],
-      ...(asAddressee || []).map((f: Record<string, unknown>) => ({
-        ...f,
-        profiles: f.profiles,
-      })) as Friendship[],
-    ];
+        friend_profile: profileMap.get(friendId) || { id: friendId, display_name: null, email: null },
+      };
+    });
 
-    setFriends(all);
+    setFriends(result);
     setLoading(false);
   }
 
@@ -233,13 +241,33 @@ export function useFriendRequests() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    const { data } = await supabase
+    const { data: pending } = await supabase
       .from('friendships')
-      .select('*, profiles!friendships_requester_id_fkey(id, display_name, email)')
+      .select('*')
       .eq('addressee_id', user.id)
       .eq('status', 'pending');
 
-    setRequests((data || []) as Friendship[]);
+    if (!pending || pending.length === 0) {
+      setRequests([]);
+      setLoading(false);
+      return;
+    }
+
+    const requesterIds = pending.map(f => f.requester_id);
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, display_name, email')
+      .in('id', requesterIds);
+
+    const profileMap = new Map((profiles || []).map((p: { id: string; display_name: string | null; email: string | null }) => [p.id, p]));
+
+    const result: Friendship[] = pending.map(f => ({
+      ...f,
+      friend_profile: profileMap.get(f.requester_id) || { id: f.requester_id, display_name: null, email: null },
+    }));
+
+    setRequests(result);
     setLoading(false);
   }
 

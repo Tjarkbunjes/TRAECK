@@ -8,14 +8,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Check, X, ChevronDown, ChevronUp, Dumbbell, Scale, Mail } from 'lucide-react';
+import { UserPlus, Check, X, ChevronDown, ChevronUp, Dumbbell, Scale, Mail, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
-import { format, parseISO, startOfWeek, addDays, eachWeekOfInterval, subDays } from 'date-fns';
+import { format, parseISO, addDays, eachWeekOfInterval, subDays } from 'date-fns';
 
 export default function FriendsPage() {
   const { user } = useAuth();
   const { friends, loading: friendsLoading, refresh: refreshFriends } = useFriends();
-  const { requests, loading: requestsLoading, refresh: refreshRequests } = useFriendRequests();
+  const { requests, refresh: refreshRequests } = useFriendRequests();
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [expandedFriend, setExpandedFriend] = useState<string | null>(null);
@@ -33,7 +33,6 @@ export default function FriendsPage() {
 
     setSending(true);
 
-    // Search for user by email
     const { data: found, error: searchErr } = await supabase.rpc('search_user_by_email', {
       search_email: email.trim(),
     });
@@ -46,7 +45,6 @@ export default function FriendsPage() {
 
     const friendId = found[0].id;
 
-    // Check if friendship already exists
     const { data: existing } = await supabase
       .from('friendships')
       .select('id, status')
@@ -54,12 +52,11 @@ export default function FriendsPage() {
 
     if (existing && existing.length > 0) {
       const status = existing[0].status;
-      toast.error(status === 'accepted' ? 'you\'re already friends.' : 'request already sent.');
+      toast.error(status === 'accepted' ? 'already friends.' : 'request already sent.');
       setSending(false);
       return;
     }
 
-    // Create friend request
     const { error } = await supabase.from('friendships').insert({
       requester_id: user.id,
       addressee_id: friendId,
@@ -93,31 +90,27 @@ export default function FriendsPage() {
   }
 
   async function handleDecline(requestId: string) {
-    const { error } = await supabase
-      .from('friendships')
-      .delete()
-      .eq('id', requestId);
-
-    if (error) {
-      toast.error('failed to decline.');
-    } else {
-      refreshRequests();
-    }
+    await supabase.from('friendships').delete().eq('id', requestId);
+    refreshRequests();
   }
 
   async function handleRemove(friendshipId: string) {
-    const { error } = await supabase
-      .from('friendships')
-      .delete()
-      .eq('id', friendshipId);
-
+    const { error } = await supabase.from('friendships').delete().eq('id', friendshipId);
     if (error) {
       toast.error('failed to remove friend.');
     } else {
       toast.success('friend removed.');
       refreshFriends();
-      if (expandedFriend) setExpandedFriend(null);
+      setExpandedFriend(null);
     }
+  }
+
+  async function handleSetNickname(friendshipId: string, nickname: string) {
+    await supabase
+      .from('friendships')
+      .update({ nickname: nickname || null })
+      .eq('id', friendshipId);
+    refreshFriends();
   }
 
   return (
@@ -158,8 +151,12 @@ export default function FriendsPage() {
             {requests.map((req) => (
               <div key={req.id} className="flex items-center justify-between p-2 rounded-md bg-muted/20">
                 <div>
-                  <p className="text-sm font-medium">{req.profiles?.display_name || 'unknown'}</p>
-                  <p className="text-xs text-muted-foreground">{req.profiles?.email}</p>
+                  <p className="text-sm font-medium">
+                    {req.friend_profile?.display_name || req.friend_profile?.email || 'unknown'}
+                  </p>
+                  {req.friend_profile?.display_name && (
+                    <p className="text-xs text-muted-foreground">{req.friend_profile?.email}</p>
+                  )}
                 </div>
                 <div className="flex gap-1.5">
                   <Button size="icon" variant="ghost" className="h-8 w-8 text-green-500" onClick={() => handleAccept(req.id)}>
@@ -185,33 +182,44 @@ export default function FriendsPage() {
       ) : (
         <div className="space-y-2">
           {friends.map((f) => {
-            const friendProfile = f.profiles;
-            const friendId = friendProfile?.id || '';
-            const isExpanded = expandedFriend === friendId;
+            const fp = f.friend_profile;
+            const friendId = fp?.id || '';
+            const displayName = f.nickname || fp?.display_name || fp?.email || '?';
+            const isExpanded = expandedFriend === f.id;
 
             return (
               <Card key={f.id}>
                 <button
-                  onClick={() => setExpandedFriend(isExpanded ? null : friendId)}
+                  onClick={() => setExpandedFriend(isExpanded ? null : f.id)}
                   className="w-full text-left"
                 >
                   <CardContent className="p-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 rounded-full bg-muted/50 flex items-center justify-center shrink-0">
                         <span className="text-sm font-bold">
-                          {(friendProfile?.display_name || friendProfile?.email || '?')[0].toUpperCase()}
+                          {displayName[0].toUpperCase()}
                         </span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{friendProfile?.display_name || 'unknown'}</p>
-                        <p className="text-xs text-muted-foreground">{friendProfile?.email}</p>
+                        <p className="text-sm font-medium">{displayName}</p>
+                        <p className="text-xs text-muted-foreground">{fp?.email}</p>
                       </div>
                     </div>
-                    {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                    )}
                   </CardContent>
                 </button>
                 {isExpanded && (
-                  <FriendDetail friendId={friendId} friendshipId={f.id} onRemove={handleRemove} />
+                  <FriendDashboard
+                    friendId={friendId}
+                    friendshipId={f.id}
+                    currentNickname={f.nickname || ''}
+                    onSetNickname={handleSetNickname}
+                    onRemove={handleRemove}
+                  />
                 )}
               </Card>
             );
@@ -222,26 +230,45 @@ export default function FriendsPage() {
   );
 }
 
-function FriendDetail({ friendId, friendshipId, onRemove }: { friendId: string; friendshipId: string; onRemove: (id: string) => void }) {
+function FriendDashboard({
+  friendId,
+  friendshipId,
+  currentNickname,
+  onSetNickname,
+  onRemove,
+}: {
+  friendId: string;
+  friendshipId: string;
+  currentNickname: string;
+  onSetNickname: (id: string, name: string) => void;
+  onRemove: (id: string) => void;
+}) {
   const { workouts, loading: workoutsLoading } = useFriendWorkouts(friendId);
   const { entries: weightEntries, loading: weightLoading } = useFriendWeight(friendId);
+  const [editingName, setEditingName] = useState(false);
+  const [nickname, setNickname] = useState(currentNickname);
 
-  // Build activity heatmap: last 12 weeks
+  // Build activity grid: last 12 weeks, per day
   const activityByWeek = useMemo(() => {
-    if (workouts.length === 0) return [];
     const now = new Date();
-    const start = subDays(now, 84); // 12 weeks
+    const start = subDays(now, 83); // 12 weeks
     const weeks = eachWeekOfInterval({ start, end: now }, { weekStartsOn: 1 });
 
     return weeks.map((weekStart) => {
-      const weekEnd = addDays(weekStart, 6);
-      const count = workouts.filter((w) => {
-        const d = parseISO(w.date);
-        return d >= weekStart && d <= weekEnd;
-      }).length;
-      return { weekStart: format(weekStart, 'MMM d'), count };
+      const days = Array.from({ length: 7 }, (_, i) => {
+        const day = addDays(weekStart, i);
+        const dayStr = format(day, 'yyyy-MM-dd');
+        const workout = workouts.find((w) => w.date === dayStr);
+        return { date: day, dayStr, workout };
+      });
+      return { weekStart, days };
     });
   }, [workouts]);
+
+  const totalWorkouts = workouts.length;
+  const workoutsPerWeek = totalWorkouts > 0
+    ? Math.round((totalWorkouts / 12) * 10) / 10
+    : 0;
 
   const weightChartEntries = useMemo(() => {
     return weightEntries.map((e) => ({
@@ -255,44 +282,111 @@ function FriendDetail({ friendId, friendshipId, onRemove }: { friendId: string; 
     }));
   }, [weightEntries]);
 
+  const latestWeight = weightChartEntries.length > 0
+    ? weightChartEntries[weightChartEntries.length - 1].weight_kg
+    : null;
+
+  function saveNickname() {
+    onSetNickname(friendshipId, nickname.trim());
+    setEditingName(false);
+  }
+
   return (
-    <div className="px-3 pb-3 space-y-4">
-      {/* Workout Activity */}
+    <div className="px-3 pb-3 space-y-4 border-t border-border pt-3">
+      {/* Nickname edit */}
+      <div className="flex items-center gap-2">
+        {editingName ? (
+          <div className="flex gap-2 flex-1">
+            <Input
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              placeholder="nickname..."
+              className="h-8 text-sm"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && saveNickname()}
+            />
+            <Button size="sm" variant="ghost" className="h-8 px-2" onClick={saveNickname}>
+              <Check className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => { setEditingName(false); setNickname(currentNickname); }}>
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setEditingName(true)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Pencil className="h-3 w-3" />
+            {currentNickname ? 'edit nickname' : 'set nickname'}
+          </button>
+        )}
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-lg bg-muted/20 p-2.5 text-center">
+          <p className="text-lg font-bold font-mono">{totalWorkouts}</p>
+          <p className="text-[10px] text-muted-foreground">workouts (90d)</p>
+        </div>
+        <div className="rounded-lg bg-muted/20 p-2.5 text-center">
+          <p className="text-lg font-bold font-mono">{workoutsPerWeek}</p>
+          <p className="text-[10px] text-muted-foreground">per week avg</p>
+        </div>
+        <div className="rounded-lg bg-muted/20 p-2.5 text-center">
+          <p className="text-lg font-bold font-mono">{latestWeight ?? '–'}</p>
+          <p className="text-[10px] text-muted-foreground">weight (kg)</p>
+        </div>
+      </div>
+
+      {/* Gym Activity Heatmap */}
       <div>
         <div className="flex items-center gap-1.5 mb-2">
           <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs font-medium">gym activity (12 weeks)</span>
+          <span className="text-xs font-medium">gym activity</span>
         </div>
         {workoutsLoading ? (
-          <div className="text-xs text-muted-foreground">loading...</div>
-        ) : workouts.length === 0 ? (
-          <div className="text-xs text-muted-foreground">no workouts yet.</div>
+          <div className="text-xs text-muted-foreground py-2">loading...</div>
         ) : (
-          <>
-            <div className="flex gap-1">
-              {activityByWeek.map((w, i) => (
-                <div key={i} className="flex-1 text-center">
-                  <div
-                    className={`h-6 rounded-[4px] flex items-center justify-center ${
-                      w.count > 0
-                        ? w.count >= 4
-                          ? 'bg-[#2626FF]/80'
-                          : w.count >= 2
-                          ? 'bg-[#2626FF]/50'
-                          : 'bg-[#2626FF]/25'
-                        : 'bg-muted/20'
-                    }`}
-                  >
-                    {w.count > 0 && <span className="text-[9px] font-bold text-white">{w.count}</span>}
-                  </div>
+          <div className="space-y-0.5">
+            {/* Day labels */}
+            <div className="flex gap-[3px] mb-1">
+              <div className="w-5" />
+              {activityByWeek.map((week, wi) => (
+                <div key={wi} className="flex-1 text-center">
+                  {wi % 3 === 0 && (
+                    <span className="text-[8px] text-muted-foreground">
+                      {format(week.weekStart, 'MMM d')}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>
-            <div className="flex justify-between mt-1">
-              <span className="text-[9px] text-muted-foreground">{activityByWeek[0]?.weekStart}</span>
-              <span className="text-[9px] text-muted-foreground">now</span>
-            </div>
-          </>
+            {/* Grid rows (Mon-Sun) */}
+            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((dayLabel, dayIdx) => (
+              <div key={dayIdx} className="flex gap-[3px] items-center">
+                <span className="text-[8px] text-muted-foreground w-5 text-right pr-1">{dayLabel}</span>
+                {activityByWeek.map((week, wi) => {
+                  const day = week.days[dayIdx];
+                  const hasWorkout = !!day?.workout;
+                  const isFuture = day?.date > new Date();
+                  return (
+                    <div
+                      key={wi}
+                      className={`flex-1 aspect-square rounded-[3px] ${
+                        isFuture
+                          ? 'bg-transparent'
+                          : hasWorkout
+                          ? 'bg-[#2626FF]'
+                          : 'bg-muted/20'
+                      }`}
+                      title={hasWorkout ? `${day.dayStr}: ${day.workout?.name || 'workout'}` : day?.dayStr}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -303,9 +397,9 @@ function FriendDetail({ friendId, friendshipId, onRemove }: { friendId: string; 
           <span className="text-xs font-medium">weight (90 days)</span>
         </div>
         {weightLoading ? (
-          <div className="text-xs text-muted-foreground">loading...</div>
+          <div className="text-xs text-muted-foreground py-2">loading...</div>
         ) : weightChartEntries.length === 0 ? (
-          <div className="text-xs text-muted-foreground">no weight data.</div>
+          <div className="text-xs text-muted-foreground py-2">no weight data.</div>
         ) : (
           <WeightChart entries={weightChartEntries} />
         )}

@@ -64,9 +64,10 @@ export interface Friendship {
   requester_id: string;
   addressee_id: string;
   status: 'pending' | 'accepted';
+  nickname: string | null;
   created_at: string;
-  // Joined profile of the other person
-  profiles?: {
+  // Populated separately
+  friend_profile?: {
     id: string;
     display_name: string | null;
     email: string | null;
