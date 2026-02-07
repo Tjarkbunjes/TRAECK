@@ -46,7 +46,7 @@ export function MacroRings({
             fill="none"
             stroke="currentColor"
             strokeWidth={strokeWidth}
-            className="text-muted/40"
+            className="text-[#222222]"
           />
           <circle
             cx={ringSize / 2}
@@ -95,7 +95,7 @@ function MacroBar({ label, value, goal, color, unit }: { label: string; value: n
           <span className="text-muted-foreground">/{goal}{unit}</span>
         </span>
       </div>
-      <div className="h-2 rounded-full bg-muted/40 overflow-hidden">
+      <div className="h-2 rounded-full bg-[#222222] overflow-hidden">
         <div
           className={cn('h-full rounded-full transition-all duration-500', color)}
           style={{ width: `${percent}%` }}

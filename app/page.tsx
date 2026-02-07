@@ -154,25 +154,25 @@ export default function HomePage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-2">
-        <Button asChild className="h-14 bg-[#0F0F0F] border-[#292929] hover:bg-[#222222]" variant="outline">
+        <Button asChild className="h-14 bg-[#222222] border-[#292929] hover:bg-[#2a2a2a]" variant="outline">
           <Link href="/food/add">
             <Utensils className="mr-2 h-5 w-5" />
             log food
           </Link>
         </Button>
-        <Button asChild className="h-14 bg-[#0F0F0F] border-[#292929] hover:bg-[#222222]" variant="outline">
+        <Button asChild className="h-14 bg-[#222222] border-[#292929] hover:bg-[#2a2a2a]" variant="outline">
           <Link href="/workout">
             <Dumbbell className="mr-2 h-5 w-5" />
             workout
           </Link>
         </Button>
-        <Button asChild className="h-14 bg-[#0F0F0F] border-[#292929] hover:bg-[#222222]" variant="outline">
+        <Button asChild className="h-14 bg-[#222222] border-[#292929] hover:bg-[#2a2a2a]" variant="outline">
           <Link href="/weight">
             <Scale className="mr-2 h-5 w-5" />
             weight
           </Link>
         </Button>
-        <Button asChild className="h-14 bg-[#0F0F0F] border-[#292929] hover:bg-[#222222]" variant="outline">
+        <Button asChild className="h-14 bg-[#222222] border-[#292929] hover:bg-[#2a2a2a]" variant="outline">
           <Link href="/friends">
             <Users className="mr-2 h-5 w-5" />
             friends
