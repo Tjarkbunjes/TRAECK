@@ -283,14 +283,16 @@ function FriendDashboard({
 
   // Build activity grid: from Jan 1 to now
   const activityByWeek = useMemo(() => {
-    const weeks = eachWeekOfInterval({ start: yearStart, end: now }, { weekStartsOn: 1 });
+    const weeks = eachWeekOfInterval({ start: yearStart, end: now }, { weekStartsOn: 1 })
+      .filter(ws => ws >= yearStart || addDays(ws, 6) >= yearStart);
 
     return weeks.map((ws) => {
       const days = Array.from({ length: 7 }, (_, i) => {
         const day = addDays(ws, i);
         const dayStr = format(day, 'yyyy-MM-dd');
-        const workout = workouts.find((w) => w.date === dayStr);
-        return { date: day, dayStr, workout };
+        const isBeforeYear = day < yearStart;
+        const workout = isBeforeYear ? undefined : workouts.find((w) => w.date === dayStr);
+        return { date: day, dayStr, workout, isBeforeYear };
       });
       return { weekStart: ws, days };
     });
@@ -301,8 +303,12 @@ function FriendDashboard({
     setEditingName(false);
   }
 
-  // Calculate label interval based on number of weeks
-  const labelInterval = activityByWeek.length > 20 ? 6 : activityByWeek.length > 10 ? 4 : 3;
+  // Show month label only when month changes
+  const monthLabels = activityByWeek.map((week, i) => {
+    const month = format(week.weekStart, 'MMM');
+    const prevMonth = i > 0 ? format(activityByWeek[i - 1].weekStart, 'MMM') : '';
+    return month !== prevMonth ? month : '';
+  });
 
   return (
     <div className="px-3 pb-3 space-y-4 border-t border-border pt-3">
@@ -369,36 +375,37 @@ function FriendDashboard({
           <div className="space-y-0.5 overflow-x-auto">
             {/* Month labels */}
             <div className="flex gap-[2px] mb-1">
-              <div className="w-4 shrink-0" />
-              {activityByWeek.map((week, wi) => (
-                <div key={wi} className="flex-1 min-w-[8px] text-center">
-                  {wi % labelInterval === 0 && (
-                    <span className="text-[7px] text-muted-foreground">
-                      {format(week.weekStart, 'MMM')}
+              <div className="w-6 shrink-0" />
+              {activityByWeek.map((_, wi) => (
+                <div key={wi} className="flex-1 min-w-[8px]">
+                  {monthLabels[wi] && (
+                    <span className="text-[8px] text-muted-foreground">
+                      {monthLabels[wi]}
                     </span>
                   )}
                 </div>
               ))}
             </div>
             {/* Grid rows (Mon-Sun) */}
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((dayLabel, dayIdx) => (
+            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((dayLabel, dayIdx) => (
               <div key={dayIdx} className="flex gap-[2px] items-center">
-                <span className="text-[7px] text-muted-foreground w-4 shrink-0 text-right pr-0.5">
-                  {dayIdx % 2 === 0 ? dayLabel : ''}
+                <span className="text-[7px] text-muted-foreground w-6 shrink-0 text-right pr-1">
+                  {dayLabel}
                 </span>
                 {activityByWeek.map((week, wi) => {
                   const day = week.days[dayIdx];
                   const hasWorkout = !!day?.workout;
                   const isFuture = day?.date > now;
+                  const isBeforeYear = day?.isBeforeYear;
                   return (
                     <div
                       key={wi}
                       className={`flex-1 min-w-[8px] aspect-square rounded-[2px] border ${
-                        isFuture
+                        isFuture || isBeforeYear
                           ? 'bg-transparent border-transparent'
                           : hasWorkout
-                          ? 'bg-[#2626FF] border-[#4040FF]'
-                          : 'bg-muted/20 border-muted-foreground/20'
+                          ? 'bg-[#2626FF] border-[#3535FF]'
+                          : 'bg-muted/20 border-muted-foreground/15'
                       }`}
                       title={hasWorkout ? `${day.dayStr}: ${day.workout?.name || 'workout'}` : day?.dayStr}
                     />
