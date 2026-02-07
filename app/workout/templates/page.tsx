@@ -199,7 +199,7 @@ export default function TemplatesPage() {
           {formExercises.length > 0 && (
             <div className="space-y-2">
               {formExercises.map((ex, i) => (
-                <div key={i} className="flex items-center justify-between bg-muted/30 rounded-md p-2">
+                <div key={i} className="flex items-center justify-between bg-[#222222] border border-[#292929] rounded-md p-2">
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-medium">{ex.exercise_name}</span>
                     <span className="text-xs text-muted-foreground ml-2">{ex.default_sets} sets</span>

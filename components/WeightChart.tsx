@@ -68,8 +68,8 @@ export function WeightChart({ entries, targetWeight }: WeightChartProps) {
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: '#1a1a1a',
-            border: '1px solid rgba(255,255,255,0.15)',
+            backgroundColor: '#0F0F0F',
+            border: '1px solid #292929',
             borderRadius: '8px',
             fontSize: '12px',
             color: '#fff',

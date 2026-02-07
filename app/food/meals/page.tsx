@@ -285,7 +285,7 @@ export default function MealsPage() {
             ) : (
               <div className="space-y-2">
                 {items.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-muted/30 rounded-md p-2">
+                  <div key={idx} className="flex items-center justify-between bg-[#222222] border border-[#292929] rounded-md p-2">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.food_name}</p>
                       <p className="text-xs text-muted-foreground">
@@ -308,7 +308,7 @@ export default function MealsPage() {
 
           {/* Totals */}
           {items.length > 0 && (
-            <Card className="bg-muted/30">
+            <Card className="bg-[#222222]">
               <CardContent className="p-3">
                 <p className="text-sm font-medium mb-1">total:</p>
                 <div className="grid grid-cols-4 gap-2 text-center text-xs">

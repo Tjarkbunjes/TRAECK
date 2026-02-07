@@ -313,7 +313,7 @@ function AddFoodPageInner() {
         </div>
 
         {/* Calculated values */}
-        <Card className="bg-muted/30">
+        <Card className="bg-[#222222]">
           <CardContent className="p-3">
             <p className="text-sm font-medium mb-1">calculated ({servingGrams}g):</p>
             <div className="grid grid-cols-4 gap-2 text-center text-xs">

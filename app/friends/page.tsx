@@ -149,7 +149,7 @@ export default function FriendsPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             {requests.map((req) => (
-              <div key={req.id} className="flex items-center justify-between p-2 rounded-md bg-muted/20">
+              <div key={req.id} className="flex items-center justify-between p-2 rounded-md bg-[#222222] border border-[#292929]">
                 <div>
                   <p className="text-sm font-medium">
                     {req.friend_profile?.email || req.friend_profile?.display_name || 'unknown'}
@@ -344,15 +344,15 @@ function FriendDashboard({
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-lg bg-muted/20 p-2.5 text-center">
+        <div className="rounded-lg bg-[#222222] border border-[#292929] p-2.5 text-center">
           <p className="text-lg font-bold font-mono">{workoutsThisWeek}</p>
           <p className="text-[10px] text-muted-foreground">workouts this week</p>
         </div>
-        <div className="rounded-lg bg-muted/20 p-2.5 text-center">
+        <div className="rounded-lg bg-[#222222] border border-[#292929] p-2.5 text-center">
           <p className="text-lg font-bold font-mono">{avgCaloriesWeek ?? '–'}</p>
           <p className="text-[10px] text-muted-foreground">avg kcal this week</p>
         </div>
-        <div className="rounded-lg bg-muted/20 p-2.5 text-center">
+        <div className="rounded-lg bg-[#222222] border border-[#292929] p-2.5 text-center">
           <p className="text-lg font-bold font-mono">{latestWeight ?? '–'}</p>
           <p className="text-[10px] text-muted-foreground">last weight</p>
         </div>
@@ -404,8 +404,8 @@ function FriendDashboard({
                         isFuture || isBeforeYear
                           ? 'bg-transparent border-transparent'
                           : hasWorkout
-                          ? 'bg-[#2626FF] border-[#3535FF]'
-                          : 'bg-muted/20 border-muted-foreground/15'
+                          ? 'bg-[#2626FF] border-[#292929]'
+                          : 'bg-[#222222] border-[#292929]'
                       }`}
                       title={hasWorkout ? `${day.dayStr}: ${day.workout?.name || 'workout'}` : day?.dayStr}
                     />

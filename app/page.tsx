@@ -132,7 +132,7 @@ export default function HomePage() {
 
       {/* Calorie Overview */}
       {profile && (
-        <Card className="bg-[#0F0F0F] border-[#292929]">
+        <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">today</CardTitle>
           </CardHeader>
@@ -154,25 +154,25 @@ export default function HomePage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-2">
-        <Button asChild className="h-14 !bg-[#0F0F0F] !border-[#292929] hover:!bg-[#181818]" variant="outline">
+        <Button asChild className="h-14" variant="outline">
           <Link href="/food/add">
             <Utensils className="mr-2 h-5 w-5" />
             log food
           </Link>
         </Button>
-        <Button asChild className="h-14 !bg-[#0F0F0F] !border-[#292929] hover:!bg-[#181818]" variant="outline">
+        <Button asChild className="h-14" variant="outline">
           <Link href="/workout">
             <Dumbbell className="mr-2 h-5 w-5" />
             workout
           </Link>
         </Button>
-        <Button asChild className="h-14 !bg-[#0F0F0F] !border-[#292929] hover:!bg-[#181818]" variant="outline">
+        <Button asChild className="h-14" variant="outline">
           <Link href="/weight">
             <Scale className="mr-2 h-5 w-5" />
             weight
           </Link>
         </Button>
-        <Button asChild className="h-14 !bg-[#0F0F0F] !border-[#292929] hover:!bg-[#181818]" variant="outline">
+        <Button asChild className="h-14" variant="outline">
           <Link href="/friends">
             <Users className="mr-2 h-5 w-5" />
             friends
@@ -185,7 +185,7 @@ export default function HomePage() {
         const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         const foodDays = weeklyFood.size;
         return (
-          <Card className="bg-[#0F0F0F] border-[#292929]">
+          <Card>
             <CardContent className="p-4 space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
