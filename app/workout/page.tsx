@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MUSCLE_GROUP_LABELS } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Dumbbell, Clock, FileText, Play, Trash2, ChevronDown, ChevronUp, Pencil, Zap } from 'lucide-react';
+import { Plus, Dumbbell, Clock, FileText, Play, Trash2, ChevronDown, ChevronUp, Pencil, Zap, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -132,6 +132,26 @@ export default function WorkoutPage() {
       refresh();
     }
     setDeleting(null);
+  }
+
+  async function copyDefaultToOwn(template: DefaultTemplate) {
+    if (!user) return;
+    const { error } = await supabase.from('workout_templates').insert({
+      user_id: user.id,
+      name: template.name,
+      exercises: template.exercises,
+    });
+    if (error) {
+      toast.error(`error: ${error.message}`);
+    } else {
+      toast.success('template copied to your templates.');
+      const { data } = await supabase
+        .from('workout_templates')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      if (data) setTemplates(data);
+    }
   }
 
   // Group sets by exercise for display
@@ -353,7 +373,17 @@ export default function WorkoutPage() {
                     {t.exercises.length} exercises
                   </p>
                 </div>
-                <Play className="h-4 w-4 text-[#2626FF]" />
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                    onClick={(e) => { e.stopPropagation(); copyDefaultToOwn(t); }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Play className="h-4 w-4 text-[#2626FF]" />
+                </div>
               </CardContent>
             </Card>
           ))}

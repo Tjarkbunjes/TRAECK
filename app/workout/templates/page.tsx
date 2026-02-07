@@ -13,7 +13,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Plus, Trash2, Save, Search, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Search, Pencil, Copy } from 'lucide-react';
+import type { DefaultTemplate } from '@/lib/default-templates';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -114,6 +115,21 @@ export default function TemplatesPage() {
     }
   }
 
+  async function copyDefaultToOwn(template: DefaultTemplate) {
+    if (!user) return;
+    const { error } = await supabase.from('workout_templates').insert({
+      user_id: user.id,
+      name: template.name,
+      exercises: template.exercises,
+    });
+    if (error) {
+      toast.error(`error: ${error.message}`);
+    } else {
+      toast.success('template copied to your templates.');
+      loadTemplates();
+    }
+  }
+
   function addExerciseToForm(name: string, muscleGroup: string) {
     setFormExercises(prev => [...prev, { exercise_name: name, muscle_group: muscleGroup, default_sets: 3 }]);
     setShowExerciseDialog(false);
@@ -184,17 +200,27 @@ export default function TemplatesPage() {
             )}
           </div>
 
-          {/* TRÆCK standard templates (read-only) */}
+          {/* TRÆCK standard templates */}
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground pt-1 pb-0.5">tr&aelig;ck templates</p>
             {DEFAULT_TEMPLATES.map((t) => (
               <Card key={t.id} className="border-[#2626FF]/20">
                 <CardContent className="p-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium">{t.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {t.exercises.map(e => e.exercise_name).join(', ')}
-                    </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium">{t.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {t.exercises.map(e => e.exercise_name).join(', ')}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary ml-2"
+                      onClick={() => copyDefaultToOwn(t)}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
