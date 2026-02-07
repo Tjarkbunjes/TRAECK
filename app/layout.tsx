@@ -47,7 +47,7 @@ export default function RootLayout({
         <main className="pb-20 min-h-screen">
           {children}
           <div className="flex justify-center py-6">
-            <span className="text-xs text-muted-foreground/40 tracking-[0.15em]">TR&AElig;CK</span>
+            <span className="text-sm text-muted-foreground/60 tracking-[0.15em]">TR&AElig;CK</span>
           </div>
         </main>
         <BottomNav />

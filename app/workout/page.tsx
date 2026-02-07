@@ -334,15 +334,14 @@ export default function WorkoutPage() {
         </TabsContent>
 
         <TabsContent value="templates" className="space-y-2 mt-4">
-          <Button variant="outline" className="w-full" asChild>
-            <Link href="/workout/templates">
-              <FileText className="mr-2 h-4 w-4" />
-              manage templates
-            </Link>
-          </Button>
-
           {/* Own templates */}
           <div className="text-xs text-muted-foreground pt-2 pb-1">your templates</div>
+          <Button variant="outline" className="w-full" asChild>
+            <Link href="/workout/templates">
+              <Plus className="mr-2 h-4 w-4" />
+              create new template
+            </Link>
+          </Button>
           {templates.map((t) => (
             <Card key={t.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => startFromTemplate(t)}>
               <CardContent className="p-3 flex items-center justify-between">
@@ -352,7 +351,17 @@ export default function WorkoutPage() {
                     {t.exercises.length} exercises
                   </p>
                 </div>
-                <Play className="h-4 w-4 text-primary" />
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                    onClick={(e) => { e.stopPropagation(); router.push(`/workout/templates?edit=${t.id}`); }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Play className="h-4 w-4 text-primary" />
+                </div>
               </CardContent>
             </Card>
           ))}

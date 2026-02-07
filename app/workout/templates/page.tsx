@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks';
 import { exercises as exerciseDB, searchExercises, muscleGroups } from '@/lib/exercises';
@@ -17,9 +17,19 @@ import { ArrowLeft, Plus, Trash2, Save, Search, Pencil, Copy } from 'lucide-reac
 import type { DefaultTemplate } from '@/lib/default-templates';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
-export default function TemplatesPage() {
+export default function TemplatesPageWrapper() {
+  return (
+    <Suspense>
+      <TemplatesPage />
+    </Suspense>
+  );
+}
+
+function TemplatesPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -28,10 +38,23 @@ export default function TemplatesPage() {
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [didAutoEdit, setDidAutoEdit] = useState(false);
 
   useEffect(() => {
     if (user) loadTemplates();
   }, [user]);
+
+  // Auto-open edit form when navigating with ?edit=ID
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && templates.length > 0 && !didAutoEdit) {
+      const t = templates.find((tpl) => tpl.id === editId);
+      if (t) {
+        startEdit(t);
+        setDidAutoEdit(true);
+      }
+    }
+  }, [templates, searchParams, didAutoEdit]);
 
   async function loadTemplates() {
     if (!user) return;
