@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Check, ArrowLeft, Timer, Search } from 'lucide-react';
+import { Plus, Check, ArrowLeft, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -47,20 +47,10 @@ function ActiveWorkoutPageInner() {
 
   const [exerciseBlocks, setExerciseBlocks] = useState<ExerciseBlock[]>([]);
   const [workoutName, setWorkoutName] = useState('');
-  const [startTime] = useState(new Date());
-  const [elapsed, setElapsed] = useState(0);
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
-
-  // Timer
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startTime.getTime()) / 1000));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [startTime]);
 
   // Load template exercises if provided
   useEffect(() => {
@@ -165,19 +155,12 @@ function ActiveWorkoutPageInner() {
       .from('workouts')
       .update({
         name: workoutName || null,
-        finished_at: new Date().toISOString(),
       })
       .eq('id', workoutId);
 
     toast.success('workout complete.');
     router.push('/workout');
   }
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
 
   const filteredExercises = exerciseSearch
     ? searchExercises(exerciseSearch)
@@ -202,10 +185,6 @@ function ActiveWorkoutPageInner() {
             />
           </div>
         </div>
-        <Badge variant="secondary" className="font-mono">
-          <Timer className="mr-1 h-3 w-3" />
-          {formatTime(elapsed)}
-        </Badge>
       </div>
 
       {/* Exercise Blocks */}

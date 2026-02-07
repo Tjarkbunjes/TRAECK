@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MUSCLE_GROUP_LABELS } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Dumbbell, Clock, FileText, Play, Trash2, ChevronDown, ChevronUp, Pencil, Zap, Copy } from 'lucide-react';
+import { Plus, Dumbbell, FileText, Play, Trash2, ChevronDown, ChevronUp, Pencil, Zap, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -46,7 +46,6 @@ export default function WorkoutPage() {
       .insert({
         user_id: user.id,
         date: format(new Date(), 'yyyy-MM-dd'),
-        started_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -66,7 +65,6 @@ export default function WorkoutPage() {
         user_id: user.id,
         date: format(new Date(), 'yyyy-MM-dd'),
         name: template.name,
-        started_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -87,7 +85,6 @@ export default function WorkoutPage() {
         user_id: user.id,
         date: format(new Date(), 'yyyy-MM-dd'),
         name: template.name,
-        started_at: new Date().toISOString(),
       })
       .select()
       .single();
@@ -261,12 +258,6 @@ export default function WorkoutPage() {
                         </p>
                       </button>
                       <div className="flex items-center gap-1">
-                        {w.finished_at && w.started_at && (
-                          <Badge variant="secondary" className="text-xs">
-                            <Clock className="mr-1 h-3 w-3" />
-                            {Math.round((new Date(w.finished_at).getTime() - new Date(w.started_at).getTime()) / 60000)} min
-                          </Badge>
-                        )}
                         <Button
                           variant="ghost"
                           size="icon"
