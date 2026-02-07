@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { WorkoutTemplate, WorkoutSet } from '@/lib/types';
+import { DEFAULT_TEMPLATES, type DefaultTemplate } from '@/lib/default-templates';
 
 export default function WorkoutPage() {
   const { user } = useAuth();
@@ -55,6 +56,27 @@ export default function WorkoutPage() {
       return;
     }
     router.push(`/workout/active?id=${data.id}`);
+  }
+
+  async function startFromDefault(template: DefaultTemplate) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('workouts')
+      .insert({
+        user_id: user.id,
+        date: format(new Date(), 'yyyy-MM-dd'),
+        name: template.name,
+        started_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (error || !data) {
+      toast.error('failed to start workout.');
+      return;
+    }
+    const exercises = encodeURIComponent(JSON.stringify(template.exercises));
+    router.push(`/workout/active?id=${data.id}&template=${exercises}`);
   }
 
   async function startFromTemplate(template: WorkoutTemplate) {
@@ -150,7 +172,7 @@ export default function WorkoutPage() {
             </Button>
             {templates.length > 0 && (
               <>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider pt-2 pb-1">templates</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider pt-2 pb-1">your templates</div>
                 {templates.map((t) => (
                   <Button
                     key={t.id}
@@ -167,6 +189,21 @@ export default function WorkoutPage() {
                 ))}
               </>
             )}
+            <div className="text-xs text-muted-foreground uppercase tracking-wider pt-2 pb-1">tr&aelig;ck templates</div>
+            {DEFAULT_TEMPLATES.map((t) => (
+              <Button
+                key={t.id}
+                variant="outline"
+                className="w-full h-12 justify-start text-left"
+                onClick={() => { setShowStartDialog(false); startFromDefault(t); }}
+              >
+                <Play className="mr-3 h-5 w-5 text-[#2626FF]" />
+                <div>
+                  <p className="font-medium">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.exercises.length} exercises</p>
+                </div>
+              </Button>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
@@ -283,6 +320,9 @@ export default function WorkoutPage() {
               manage templates
             </Link>
           </Button>
+
+          {/* Own templates */}
+          <div className="text-xs text-muted-foreground pt-2 pb-1">your templates</div>
           {templates.map((t) => (
             <Card key={t.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => startFromTemplate(t)}>
               <CardContent className="p-3 flex items-center justify-between">
@@ -298,9 +338,25 @@ export default function WorkoutPage() {
           ))}
           {templates.length === 0 && (
             <p className="text-center text-muted-foreground py-4 text-sm">
-              no templates yet.
+              no own templates yet.
             </p>
           )}
+
+          {/* TRÆCK standard templates */}
+          <div className="text-xs text-muted-foreground pt-2 pb-1">tr&aelig;ck templates</div>
+          {DEFAULT_TEMPLATES.map((t) => (
+            <Card key={t.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => startFromDefault(t)}>
+              <CardContent className="p-3 flex items-center justify-between">
+                <div>
+                  <p className="font-medium">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t.exercises.length} exercises
+                  </p>
+                </div>
+                <Play className="h-4 w-4 text-[#2626FF]" />
+              </CardContent>
+            </Card>
+          ))}
         </TabsContent>
       </Tabs>
     </div>

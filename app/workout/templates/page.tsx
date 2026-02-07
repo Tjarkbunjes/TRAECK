@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks';
 import { exercises as exerciseDB, searchExercises, muscleGroups } from '@/lib/exercises';
 import { MUSCLE_GROUP_LABELS, type TemplateExercise, type WorkoutTemplate } from '@/lib/types';
+import { DEFAULT_TEMPLATES } from '@/lib/default-templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -141,7 +142,9 @@ export default function TemplatesPage() {
             create new template
           </Button>
 
+          {/* Own templates */}
           <div className="space-y-2">
+            <p className="text-xs text-muted-foreground pt-1 pb-0.5">your templates</p>
             {templates.map((t) => (
               <Card key={t.id}>
                 <CardContent className="p-3">
@@ -176,9 +179,26 @@ export default function TemplatesPage() {
             ))}
             {templates.length === 0 && (
               <p className="text-center text-muted-foreground py-4 text-sm">
-                no templates yet.
+                no own templates yet.
               </p>
             )}
+          </div>
+
+          {/* TRÆCK standard templates (read-only) */}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground pt-1 pb-0.5">tr&aelig;ck templates</p>
+            {DEFAULT_TEMPLATES.map((t) => (
+              <Card key={t.id} className="border-[#2626FF]/20">
+                <CardContent className="p-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium">{t.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {t.exercises.map(e => e.exercise_name).join(', ')}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </>
       ) : (
