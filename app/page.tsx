@@ -177,7 +177,7 @@ export default function HomePage() {
                     const kcal = weeklyFood.get(i);
                     return (
                       <div key={i} className="flex-1 text-center space-y-1">
-                        <div className={`h-7 rounded-lg flex items-center justify-center border ${kcal ? 'bg-muted/30 border-border' : 'bg-muted/20 border-transparent'}`}>
+                        <div className={`h-7 rounded-md flex items-center justify-center border ${kcal ? 'bg-muted/50 border-border' : 'bg-muted/20 border-transparent'}`}>
                           {kcal ? (
                             <span className="text-xs font-extrabold text-white font-mono">{Math.round(kcal)}</span>
                           ) : null}
@@ -201,7 +201,7 @@ export default function HomePage() {
                     const name = weeklyWorkouts.get(i);
                     return (
                       <div key={i} className="flex-1 text-center space-y-1">
-                        <div className={`h-7 rounded-lg flex items-center justify-center border ${name ? 'bg-muted/30 border-border' : 'bg-muted/20 border-transparent'}`}>
+                        <div className={`h-7 rounded-md flex items-center justify-center border ${name ? 'bg-muted/50 border-border' : 'bg-muted/20 border-transparent'}`}>
                           {name ? (
                             <span className="text-xs font-extrabold text-white truncate px-1">{name.replace(' Day', '')}</span>
                           ) : null}
