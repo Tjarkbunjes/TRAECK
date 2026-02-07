@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
-import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship } from './types';
+import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship, DailyFoodAggregate } from './types';
 import { format } from 'date-fns';
 
 export function useProfile() {
@@ -102,6 +102,102 @@ export function useWorkouts() {
   useEffect(() => { load(); }, []);
 
   return { workouts, loading, refresh: load };
+}
+
+export function useAnalyticsWorkouts(days: number) {
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [sets, setSets] = useState<WorkoutSet[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const { data } = await supabase
+        .from('workouts')
+        .select('*, workout_sets(*)')
+        .eq('user_id', user.id)
+        .gte('date', format(startDate, 'yyyy-MM-dd'))
+        .order('date', { ascending: true });
+
+      if (data) {
+        const allSets: WorkoutSet[] = [];
+        const ws: Workout[] = [];
+        for (const row of data) {
+          const { workout_sets, ...workout } = row;
+          ws.push(workout as Workout);
+          if (Array.isArray(workout_sets)) {
+            allSets.push(...(workout_sets as WorkoutSet[]));
+          }
+        }
+        setWorkouts(ws);
+        setSets(allSets);
+      } else {
+        setWorkouts([]);
+        setSets([]);
+      }
+      setLoading(false);
+    }
+    load();
+  }, [days]);
+
+  return { workouts, sets, loading };
+}
+
+export function useAnalyticsFood(days: number) {
+  const [dailyFood, setDailyFood] = useState<DailyFoodAggregate[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const { data } = await supabase
+        .from('food_entries')
+        .select('date, calories, protein, carbs, fat')
+        .eq('user_id', user.id)
+        .gte('date', format(startDate, 'yyyy-MM-dd'))
+        .order('date', { ascending: true });
+
+      if (data) {
+        const map = new Map<string, DailyFoodAggregate>();
+        for (const entry of data) {
+          const existing = map.get(entry.date);
+          if (existing) {
+            existing.calories += entry.calories || 0;
+            existing.protein += entry.protein || 0;
+            existing.carbs += entry.carbs || 0;
+            existing.fat += entry.fat || 0;
+          } else {
+            map.set(entry.date, {
+              date: entry.date,
+              calories: entry.calories || 0,
+              protein: entry.protein || 0,
+              carbs: entry.carbs || 0,
+              fat: entry.fat || 0,
+            });
+          }
+        }
+        setDailyFood(Array.from(map.values()));
+      } else {
+        setDailyFood([]);
+      }
+      setLoading(false);
+    }
+    load();
+  }, [days]);
+
+  return { dailyFood, loading };
 }
 
 export function useLastSets(exerciseName: string) {

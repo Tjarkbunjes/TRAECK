@@ -153,6 +153,14 @@ export const MEAL_LABELS: Record<MealType, string> = {
   snack: 'Snack',
 };
 
+export interface DailyFoodAggregate {
+  date: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
 export const MUSCLE_GROUP_LABELS: Record<string, string> = {
   chest: 'Chest',
   back: 'Back',
