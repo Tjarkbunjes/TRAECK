@@ -106,9 +106,14 @@ export default function FriendsPage() {
   }
 
   async function handleSetNickname(friendshipId: string, nickname: string) {
+    // Determine if current user is the requester or addressee to update the correct column
+    const friendship = friends.find(f => f.id === friendshipId);
+    if (!friendship || !user) return;
+    const isRequester = friendship.requester_id === user.id;
+    const field = isRequester ? 'requester_nickname' : 'addressee_nickname';
     await supabase
       .from('friendships')
-      .update({ nickname: nickname || null })
+      .update({ [field]: nickname || null })
       .eq('id', friendshipId);
     refreshFriends();
   }

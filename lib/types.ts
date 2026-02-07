@@ -64,7 +64,10 @@ export interface Friendship {
   requester_id: string;
   addressee_id: string;
   status: 'pending' | 'accepted';
-  nickname: string | null;
+  requester_nickname: string | null;
+  addressee_nickname: string | null;
+  // Resolved per-user nickname (set in useFriends hook)
+  nickname?: string | null;
   created_at: string;
   // Populated separately
   friend_profile?: {

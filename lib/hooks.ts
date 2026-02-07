@@ -311,9 +311,13 @@ export function useFriends() {
     const profileMap = new Map((profiles || []).map((p: { id: string; display_name: string | null; email: string | null }) => [p.id, p]));
 
     const result: Friendship[] = friendships.map(f => {
-      const friendId = f.requester_id === user.id ? f.addressee_id : f.requester_id;
+      const isRequester = f.requester_id === user.id;
+      const friendId = isRequester ? f.addressee_id : f.requester_id;
+      // Each user has their own nickname for the friend
+      const nickname = isRequester ? f.requester_nickname : f.addressee_nickname;
       return {
         ...f,
+        nickname,
         friend_profile: profileMap.get(friendId) || { id: friendId, display_name: null, email: null },
       };
     });
