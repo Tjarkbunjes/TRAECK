@@ -13,10 +13,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Plus, Trash2, Save, Search, Pencil, Copy } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Search, Pencil, Copy, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export default function TemplatesPageWrapper() {
   return (
@@ -187,6 +190,21 @@ function TemplatesPage() {
     setExerciseSearch('');
   }
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = formExercises.findIndex((_, i) => `ex-${i}` === active.id);
+    const newIndex = formExercises.findIndex((_, i) => `ex-${i}` === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      setFormExercises(prev => arrayMove(prev, oldIndex, newIndex));
+    }
+  }
+
   const filteredExercises = exerciseSearch
     ? searchExercises(exerciseSearch)
     : selectedGroup
@@ -335,39 +353,29 @@ function TemplatesPage() {
           </div>
 
           {formExercises.length > 0 && (
-            <div className="space-y-2">
-              {formExercises.map((ex, i) => (
-                <div key={i} className="flex items-center justify-between bg-[#222222] border border-[#292929] rounded-md p-2">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium">{ex.exercise_name}</span>
-                    <span className="text-xs text-muted-foreground ml-2">{ex.default_sets} sets</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={20}
-                      value={ex.default_sets}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value) || 1;
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={formExercises.map((_, i) => `ex-${i}`)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {formExercises.map((ex, i) => (
+                    <SortableExerciseItem
+                      key={`ex-${i}`}
+                      id={`ex-${i}`}
+                      exercise={ex}
+                      onSetsChange={(val) => {
                         setFormExercises(prev => prev.map((item, idx) =>
                           idx === i ? { ...item, default_sets: val } : item
                         ));
                       }}
-                      className="h-7 w-14 text-center text-xs"
+                      onRemove={() => setFormExercises(prev => prev.filter((_, idx) => idx !== i))}
                     />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setFormExercises(prev => prev.filter((_, idx) => idx !== i))}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           )}
 
           <Dialog open={showExerciseDialog} onOpenChange={setShowExerciseDialog}>
@@ -433,6 +441,43 @@ function TemplatesPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function SortableExerciseItem({ id, exercise, onSetsChange, onRemove }: {
+  id: string;
+  exercise: TemplateExercise;
+  onSetsChange: (val: number) => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center justify-between bg-[#222222] border border-[#292929] rounded-md p-2">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <button {...attributes} {...listeners} className="touch-none text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing">
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-medium">{exercise.exercise_name}</span>
+          <span className="text-xs text-muted-foreground ml-2">{exercise.default_sets} sets</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-1">
+        <Input
+          type="number"
+          min={1}
+          max={20}
+          value={exercise.default_sets}
+          onChange={(e) => onSetsChange(parseInt(e.target.value) || 1)}
+          className="h-7 w-14 text-center text-xs"
+        />
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onRemove}>
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      </div>
     </div>
   );
 }
