@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Search, Star, Clock, Save, ScanBarcode } from 'lucide-react';
 import { toast } from 'sonner';
@@ -53,6 +52,7 @@ function AddFoodPageInner() {
   // Favorites & Recent
   const [favorites, setFavorites] = useState<FoodProduct[]>([]);
   const [recent, setRecent] = useState<FoodProduct[]>([]);
+  const [recentFilter, setRecentFilter] = useState('');
 
   useEffect(() => {
     if (editId) {
@@ -120,7 +120,7 @@ function AddFoodPageInner() {
       .select('food_name, barcode, calories, protein, carbs, fat, sugar, saturated_fat, serving_grams')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
-      .limit(20);
+      .limit(500);
     if (recentEntries) {
       const seen = new Set<string>();
       const unique: FoodProduct[] = [];
@@ -139,7 +139,7 @@ function AddFoodPageInner() {
           });
         }
       }
-      setRecent(unique.slice(0, 10));
+      setRecent(unique);
     }
   }
 
@@ -232,6 +232,19 @@ function AddFoodPageInner() {
         <h1 className="text-xl font-bold">{editId ? 'edit entry' : 'add food'}</h1>
       </div>
 
+      {/* Meal type selector at top */}
+      <div className="flex gap-1.5">
+        {(Object.entries(MEAL_LABELS) as [MealType, string][]).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setMealType(key)}
+            className={`flex-1 py-2 text-xs rounded-md transition-colors ${mealType === key ? 'bg-[#2626FF] text-white' : 'bg-[#1E1E1E] text-muted-foreground hover:text-foreground'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Search */}
       <div className="flex gap-2">
         <Input
@@ -275,18 +288,6 @@ function AddFoodPageInner() {
 
       {/* Entry Form */}
       <div className="space-y-3">
-        <div className="space-y-2">
-          <Label>Meal</Label>
-          <Select value={mealType} onValueChange={(v) => setMealType(v as MealType)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {Object.entries(MEAL_LABELS).map(([key, label]) => (
-                <SelectItem key={key} value={key}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
         <div className="space-y-2">
           <Label>Product Name</Label>
           <Input value={foodName} onChange={(e) => setFoodName(e.target.value)} placeholder="e.g. Oatmeal" />
@@ -393,8 +394,16 @@ function AddFoodPageInner() {
             <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1 mb-2">
               <Clock className="h-3 w-3" /> recent
             </h2>
-            <div className="space-y-1">
-              {recent.map((f, i) => (
+            <Input
+              placeholder="search recent..."
+              value={recentFilter}
+              onChange={(e) => setRecentFilter(e.target.value)}
+              className="mb-2 h-8 text-sm"
+            />
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {recent
+                .filter(f => !recentFilter || f.name.toLowerCase().includes(recentFilter.toLowerCase()))
+                .map((f, i) => (
                 <Card key={i} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => selectProduct(f)}>
                   <CardContent className="p-2 text-sm">
                     <p className="font-medium truncate">{f.name}</p>
