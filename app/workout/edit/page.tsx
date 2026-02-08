@@ -9,6 +9,7 @@ import { MUSCLE_GROUP_LABELS } from '@/lib/types';
 import type { WorkoutSet } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DecimalInput } from '@/components/DecimalInput';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -451,15 +452,10 @@ function SortableEditBlock({
               <span className="w-8 text-center text-xs text-muted-foreground font-medium shrink-0">
                 {set.set_number}
               </span>
-              <Input
-                type="text"
-                inputMode="decimal"
+              <DecimalInput
                 placeholder="kg"
-                value={set.weight_kg ?? ''}
-                onChange={(e) => {
-                  const v = e.target.value.replace(',', '.');
-                  onUpdateSet(setIdx, { weight_kg: v ? parseFloat(v) : null });
-                }}
+                value={set.weight_kg}
+                onChange={(v) => onUpdateSet(setIdx, { weight_kg: v })}
                 className="h-9 flex-1 text-center"
               />
               <Input

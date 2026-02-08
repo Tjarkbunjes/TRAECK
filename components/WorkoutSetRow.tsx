@@ -1,6 +1,7 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
+import { DecimalInput } from '@/components/DecimalInput';
 import { Button } from '@/components/ui/button';
 import { Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -29,15 +30,10 @@ export function WorkoutSetRow({ set, lastSet, onChange, onDelete }: WorkoutSetRo
         {set.set_number}
       </span>
 
-      <Input
-        type="text"
-        inputMode="decimal"
+      <DecimalInput
         placeholder="kg"
-        value={set.weight_kg ?? ''}
-        onChange={(e) => {
-          const v = e.target.value.replace(',', '.');
-          onChange({ weight_kg: v ? parseFloat(v) : null });
-        }}
+        value={set.weight_kg}
+        onChange={(v) => onChange({ weight_kg: v })}
         className="h-9 flex-1 text-center"
       />
       <Input
