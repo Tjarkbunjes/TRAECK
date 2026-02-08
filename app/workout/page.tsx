@@ -157,6 +157,65 @@ export default function WorkoutPage() {
     }
   }
 
+  async function deleteOwnTemplate(id: string) {
+    const { error } = await supabase.from('workout_templates').delete().eq('id', id);
+    if (error) {
+      toast.error(`error: ${error.message}`);
+    } else {
+      toast.success('template deleted.');
+      const { data } = await supabase
+        .from('workout_templates')
+        .select('*')
+        .eq('user_id', user!.id)
+        .eq('is_default', false)
+        .order('created_at', { ascending: false });
+      if (data) setTemplates(data);
+    }
+  }
+
+  async function saveWorkoutAsTemplate(workoutId: string, workoutName: string | null) {
+    if (!user) return;
+    const sets = workoutSets[workoutId];
+    if (!sets || sets.length === 0) {
+      toast.error('no exercises to save.');
+      return;
+    }
+
+    // Group sets by exercise, preserving order of first appearance
+    const seen = new Set<string>();
+    const exercises: { exercise_name: string; muscle_group: string; default_sets: number }[] = [];
+    for (const s of sets) {
+      if (!seen.has(s.exercise_name)) {
+        seen.add(s.exercise_name);
+        exercises.push({
+          exercise_name: s.exercise_name,
+          muscle_group: s.muscle_group || '',
+          default_sets: sets.filter(x => x.exercise_name === s.exercise_name).length,
+        });
+      }
+    }
+
+    const { error } = await supabase.from('workout_templates').insert({
+      user_id: user.id,
+      name: workoutName || 'Workout Template',
+      exercises,
+      is_default: false,
+    });
+
+    if (error) {
+      toast.error(`error: ${error.message}`);
+    } else {
+      toast.success('template created.');
+      const { data } = await supabase
+        .from('workout_templates')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_default', false)
+        .order('created_at', { ascending: false });
+      if (data) setTemplates(data);
+    }
+  }
+
   async function deleteDefaultTemplate(id: string) {
     const { error } = await supabase.from('workout_templates').delete().eq('id', id);
     if (error) {
@@ -334,28 +393,39 @@ export default function WorkoutPage() {
                         {sets.length === 0 ? (
                           <p className="text-xs text-muted-foreground">no sets recorded.</p>
                         ) : (
-                          Object.entries(exerciseGroups).map(([exerciseName, exSets]) => (
-                            <div key={exerciseName}>
-                              <div className="flex items-center justify-between mb-1">
-                                <p className="text-sm font-medium">{exerciseName}</p>
-                                {exSets[0]?.muscle_group && (
-                                  <Badge variant="secondary" className="text-[10px]">
-                                    {MUSCLE_GROUP_LABELS[exSets[0].muscle_group] || exSets[0].muscle_group}
-                                  </Badge>
-                                )}
+                          <>
+                            {Object.entries(exerciseGroups).map(([exerciseName, exSets]) => (
+                              <div key={exerciseName}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <p className="text-sm font-medium">{exerciseName}</p>
+                                  {exSets[0]?.muscle_group && (
+                                    <Badge variant="secondary" className="text-[10px]">
+                                      {MUSCLE_GROUP_LABELS[exSets[0].muscle_group] || exSets[0].muscle_group}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="space-y-0.5">
+                                  {exSets.map((s) => (
+                                    <div key={s.id} className="flex items-center gap-3 text-xs text-muted-foreground">
+                                      <span className="w-8">Set {s.set_number}</span>
+                                      <span>{s.weight_kg ?? '–'} kg</span>
+                                      <span>× {s.reps ?? '–'}</span>
+                                      {s.rpe && <span className="text-[10px]">RPE {s.rpe}</span>}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                              <div className="space-y-0.5">
-                                {exSets.map((s) => (
-                                  <div key={s.id} className="flex items-center gap-3 text-xs text-muted-foreground">
-                                    <span className="w-8">Set {s.set_number}</span>
-                                    <span>{s.weight_kg ?? '–'} kg</span>
-                                    <span>× {s.reps ?? '–'}</span>
-                                    {s.rpe && <span className="text-[10px]">RPE {s.rpe}</span>}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ))
+                            ))}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full text-xs"
+                              onClick={() => saveWorkoutAsTemplate(w.id, w.name)}
+                            >
+                              <FileText className="mr-1.5 h-3.5 w-3.5" />
+                              save as template
+                            </Button>
+                          </>
                         )}
                       </div>
                     )}
@@ -392,6 +462,14 @@ export default function WorkoutPage() {
                     onClick={(e) => { e.stopPropagation(); router.push(`/workout/templates?edit=${t.id}`); }}
                   >
                     <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); deleteOwnTemplate(t.id); }}
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                   <Play className="h-4 w-4 text-primary" />
                 </div>
