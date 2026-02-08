@@ -64,8 +64,9 @@ function EditWorkoutPageInner() {
   async function loadWorkout() {
     if (!workoutId) return;
 
-    const [workoutRes, setsRes] = await Promise.all([
+    const [workoutRes, exercisesRes, setsRes] = await Promise.all([
       supabase.from('workouts').select('*').eq('id', workoutId).single(),
+      supabase.from('workout_exercises').select('*').eq('workout_id', workoutId).order('sort_order'),
       supabase.from('workout_sets').select('*').eq('workout_id', workoutId).order('exercise_name').order('set_number'),
     ]);
 
@@ -73,25 +74,45 @@ function EditWorkoutPageInner() {
       setWorkoutName(workoutRes.data.name || '');
     }
 
-    if (setsRes.data) {
-      const groups: Record<string, EditExerciseBlock> = {};
-      for (const s of setsRes.data) {
-        if (!groups[s.exercise_name]) {
-          groups[s.exercise_name] = {
+    // Group sets by exercise name
+    const setsByExercise: Record<string, EditSet[]> = {};
+    for (const s of (setsRes.data || [])) {
+      if (!setsByExercise[s.exercise_name]) setsByExercise[s.exercise_name] = [];
+      setsByExercise[s.exercise_name].push({
+        id: s.id,
+        set_number: s.set_number,
+        weight_kg: s.weight_kg,
+        reps: s.reps,
+      });
+    }
+
+    if (exercisesRes.data && exercisesRes.data.length > 0) {
+      // Build blocks from workout_exercises (preserves empty exercises)
+      const blocks: EditExerciseBlock[] = exercisesRes.data.map((ex: { exercise_name: string; muscle_group: string | null }) => ({
+        exercise_name: ex.exercise_name,
+        muscle_group: ex.muscle_group || '',
+        original_exercise_name: ex.exercise_name,
+        sets: setsByExercise[ex.exercise_name] || [
+          { set_number: 1, weight_kg: null, reps: null, isNew: true },
+        ],
+      }));
+      setExerciseBlocks(blocks);
+    } else {
+      // Fallback: build from sets only (workouts without workout_exercises records)
+      const seen = new Set<string>();
+      const blocks: EditExerciseBlock[] = [];
+      for (const s of (setsRes.data || [])) {
+        if (!seen.has(s.exercise_name)) {
+          seen.add(s.exercise_name);
+          blocks.push({
             exercise_name: s.exercise_name,
             muscle_group: s.muscle_group || '',
             original_exercise_name: s.exercise_name,
-            sets: [],
-          };
+            sets: setsByExercise[s.exercise_name] || [],
+          });
         }
-        groups[s.exercise_name].sets.push({
-          id: s.id,
-          set_number: s.set_number,
-          weight_kg: s.weight_kg,
-          reps: s.reps,
-        });
       }
-      setExerciseBlocks(Object.values(groups));
+      setExerciseBlocks(blocks);
     }
     setLoading(false);
   }
