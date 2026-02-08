@@ -17,9 +17,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { WorkoutTemplate, WorkoutSet } from '@/lib/types';
+import { isAdmin } from '@/lib/admin';
 
 export default function WorkoutPage() {
   const { user } = useAuth();
+  const admin = isAdmin(user?.email);
   const { workouts, loading, refresh } = useWorkouts();
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [defaultTemplates, setDefaultTemplates] = useState<WorkoutTemplate[]>([]);
@@ -152,6 +154,21 @@ export default function WorkoutPage() {
         .eq('is_default', false)
         .order('created_at', { ascending: false });
       if (data) setTemplates(data);
+    }
+  }
+
+  async function deleteDefaultTemplate(id: string) {
+    const { error } = await supabase.from('workout_templates').delete().eq('id', id);
+    if (error) {
+      toast.error(`error: ${error.message}`);
+    } else {
+      toast.success('template deleted.');
+      const { data } = await supabase
+        .from('workout_templates')
+        .select('*')
+        .eq('is_default', true)
+        .order('created_at', { ascending: true });
+      if (data) setDefaultTemplates(data);
     }
   }
 
@@ -401,14 +418,35 @@ export default function WorkoutPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary"
-                        onClick={(e) => { e.stopPropagation(); copyDefaultToOwn(t); }}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
+                      {admin ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-[#2626FF] hover:text-[#2626FF]"
+                            onClick={(e) => { e.stopPropagation(); router.push(`/workout/templates?edit=${t.id}`); }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); deleteDefaultTemplate(t.id); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
+                          onClick={(e) => { e.stopPropagation(); copyDefaultToOwn(t); }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Play className="h-4 w-4 text-[#2626FF]" />
                     </div>
                   </CardContent>

@@ -53,14 +53,20 @@ function TemplatesPage() {
   // Auto-open edit form when navigating with ?edit=ID
   useEffect(() => {
     const editId = searchParams.get('edit');
-    if (editId && templates.length > 0 && !didAutoEdit) {
-      const t = templates.find((tpl) => tpl.id === editId);
-      if (t) {
-        startEdit(t, false);
+    if (editId && !didAutoEdit && (templates.length > 0 || defaultTemplates.length > 0)) {
+      const ownT = templates.find((tpl) => tpl.id === editId);
+      if (ownT) {
+        startEdit(ownT, false);
+        setDidAutoEdit(true);
+        return;
+      }
+      const defT = defaultTemplates.find((tpl) => tpl.id === editId);
+      if (defT && admin) {
+        startEdit(defT, true);
         setDidAutoEdit(true);
       }
     }
-  }, [templates, searchParams, didAutoEdit]);
+  }, [templates, defaultTemplates, searchParams, didAutoEdit, admin]);
 
   async function loadTemplates() {
     if (!user) return;
