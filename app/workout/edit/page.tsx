@@ -241,57 +241,89 @@ function EditWorkoutPageInner() {
     if (!workoutId) return;
     setSaving(true);
 
-    await supabase.from('workouts').update({ name: workoutName || null }).eq('id', workoutId);
+    try {
+      await supabase.from('workouts').update({ name: workoutName || null }).eq('id', workoutId);
 
-    // Delete removed sets
-    if (deletedSetIds.length > 0) {
-      await supabase.from('workout_sets').delete().in('id', deletedSetIds);
-    }
+      // Delete removed sets
+      if (deletedSetIds.length > 0) {
+        await supabase.from('workout_sets').delete().in('id', deletedSetIds);
+      }
 
-    // Delete removed exercises from workout_exercises
-    for (const exName of deletedExerciseNames) {
-      await supabase.from('workout_exercises')
-        .delete()
-        .eq('workout_id', workoutId)
-        .eq('exercise_name', exName);
-    }
+      // Delete removed exercises from workout_exercises
+      for (const exName of deletedExerciseNames) {
+        await supabase.from('workout_exercises')
+          .delete()
+          .eq('workout_id', workoutId)
+          .eq('exercise_name', exName);
+      }
 
-    // Update/insert sets
-    for (const block of exerciseBlocks) {
-      for (const set of block.sets) {
-        if (set.id && !set.isNew) {
-          // Update existing set (including possible exercise name change)
-          await supabase.from('workout_sets').update({
-            exercise_name: block.exercise_name,
-            muscle_group: block.muscle_group,
-            weight_kg: set.weight_kg,
-            reps: set.reps,
-            set_number: set.set_number,
-          }).eq('id', set.id);
-        } else if (set.isNew || !set.id) {
-          await supabase.from('workout_sets').insert({
+      // First: sync workout_exercises (swaps, new exercises, sort order)
+      for (let i = 0; i < exerciseBlocks.length; i++) {
+        const block = exerciseBlocks[i];
+
+        if (block.original_exercise_name && block.original_exercise_name !== block.exercise_name) {
+          // Exercise was swapped — update the existing workout_exercises record
+          const { error } = await supabase.from('workout_exercises')
+            .update({ exercise_name: block.exercise_name, muscle_group: block.muscle_group, sort_order: i })
+            .eq('workout_id', workoutId)
+            .eq('exercise_name', block.original_exercise_name);
+          if (error) console.error('workout_exercises swap error:', error);
+        } else if (!block.original_exercise_name) {
+          // New exercise added in edit mode — create workout_exercises record
+          const { error } = await supabase.from('workout_exercises').insert({
             workout_id: workoutId,
             exercise_name: block.exercise_name,
             muscle_group: block.muscle_group,
-            set_number: set.set_number,
-            weight_kg: set.weight_kg,
-            reps: set.reps,
+            sort_order: i,
           });
+          if (error) console.error('workout_exercises insert error:', error);
+        } else {
+          // Unchanged exercise — update sort_order
+          await supabase.from('workout_exercises')
+            .update({ sort_order: i })
+            .eq('workout_id', workoutId)
+            .eq('exercise_name', block.exercise_name);
         }
       }
 
-      // Update workout_exercises if exercise was swapped
-      if (block.original_exercise_name && block.original_exercise_name !== block.exercise_name) {
-        await supabase.from('workout_exercises')
-          .update({ exercise_name: block.exercise_name, muscle_group: block.muscle_group })
-          .eq('workout_id', workoutId)
-          .eq('exercise_name', block.original_exercise_name);
-      }
-    }
+      // Second: sync workout_sets
+      for (const block of exerciseBlocks) {
+        for (const set of block.sets) {
+          const hasData = set.weight_kg !== null || set.reps !== null;
 
-    toast.success('workout saved.');
-    setSaving(false);
-    router.push('/workout');
+          if (set.id && !set.isNew) {
+            // Update existing set (including possible exercise name change)
+            const { error } = await supabase.from('workout_sets').update({
+              exercise_name: block.exercise_name,
+              muscle_group: block.muscle_group,
+              weight_kg: set.weight_kg,
+              reps: set.reps,
+              set_number: set.set_number,
+            }).eq('id', set.id);
+            if (error) console.error('workout_sets update error:', error);
+          } else if ((set.isNew || !set.id) && hasData) {
+            // Only insert new sets that have actual data
+            const { error } = await supabase.from('workout_sets').insert({
+              workout_id: workoutId,
+              exercise_name: block.exercise_name,
+              muscle_group: block.muscle_group,
+              set_number: set.set_number,
+              weight_kg: set.weight_kg,
+              reps: set.reps,
+            });
+            if (error) console.error('workout_sets insert error:', error);
+          }
+        }
+      }
+
+      toast.success('workout saved.');
+      router.push('/workout');
+    } catch (err) {
+      console.error('save error:', err);
+      toast.error('failed to save workout.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   const filteredExercises = exerciseSearch
