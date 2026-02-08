@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Save, ArrowLeft, Trash2, Search } from 'lucide-react';
+import { Plus, Save, ArrowLeft, Trash2, Search, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -27,6 +27,7 @@ interface EditSet {
 interface EditExerciseBlock {
   exercise_name: string;
   muscle_group: string;
+  original_exercise_name?: string;
   sets: EditSet[];
 }
 
@@ -47,9 +48,11 @@ function EditWorkoutPageInner() {
   const [workoutName, setWorkoutName] = useState('');
   const [exerciseBlocks, setExerciseBlocks] = useState<EditExerciseBlock[]>([]);
   const [deletedSetIds, setDeletedSetIds] = useState<string[]>([]);
+  const [deletedExerciseNames, setDeletedExerciseNames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showExerciseDialog, setShowExerciseDialog] = useState(false);
+  const [swapBlockIdx, setSwapBlockIdx] = useState<number | null>(null);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
@@ -77,6 +80,7 @@ function EditWorkoutPageInner() {
           groups[s.exercise_name] = {
             exercise_name: s.exercise_name,
             muscle_group: s.muscle_group || '',
+            original_exercise_name: s.exercise_name,
             sets: [],
           };
         }
@@ -120,6 +124,23 @@ function EditWorkoutPageInner() {
     });
   }
 
+  function deleteExerciseBlock(blockIdx: number) {
+    setExerciseBlocks(prev => {
+      const block = prev[blockIdx];
+      // Track set IDs to delete from DB
+      for (const s of block.sets) {
+        if (s.id) {
+          setDeletedSetIds(ids => [...ids, s.id!]);
+        }
+      }
+      // Track original exercise name for workout_exercises cleanup
+      if (block.original_exercise_name) {
+        setDeletedExerciseNames(names => [...names, block.original_exercise_name!]);
+      }
+      return prev.filter((_, i) => i !== blockIdx);
+    });
+  }
+
   function addSet(blockIdx: number) {
     setExerciseBlocks(prev => {
       const updated = [...prev];
@@ -136,14 +157,28 @@ function EditWorkoutPageInner() {
   }
 
   function addExercise(name: string, muscleGroup: string) {
-    setExerciseBlocks(prev => [
-      ...prev,
-      {
-        exercise_name: name,
-        muscle_group: muscleGroup,
-        sets: [{ set_number: 1, weight_kg: null, reps: null, isNew: true }],
-      },
-    ]);
+    if (swapBlockIdx !== null) {
+      // Swap exercise
+      setExerciseBlocks(prev => {
+        const updated = [...prev];
+        const block = { ...updated[swapBlockIdx] };
+        block.exercise_name = name;
+        block.muscle_group = muscleGroup;
+        updated[swapBlockIdx] = block;
+        return updated;
+      });
+      setSwapBlockIdx(null);
+    } else {
+      // Add new exercise
+      setExerciseBlocks(prev => [
+        ...prev,
+        {
+          exercise_name: name,
+          muscle_group: muscleGroup,
+          sets: [{ set_number: 1, weight_kg: null, reps: null, isNew: true }],
+        },
+      ]);
+    }
     setShowExerciseDialog(false);
     setExerciseSearch('');
     setSelectedGroup(null);
@@ -155,14 +190,27 @@ function EditWorkoutPageInner() {
 
     await supabase.from('workouts').update({ name: workoutName || null }).eq('id', workoutId);
 
+    // Delete removed sets
     if (deletedSetIds.length > 0) {
       await supabase.from('workout_sets').delete().in('id', deletedSetIds);
     }
 
+    // Delete removed exercises from workout_exercises
+    for (const exName of deletedExerciseNames) {
+      await supabase.from('workout_exercises')
+        .delete()
+        .eq('workout_id', workoutId)
+        .eq('exercise_name', exName);
+    }
+
+    // Update/insert sets
     for (const block of exerciseBlocks) {
       for (const set of block.sets) {
         if (set.id && !set.isNew) {
+          // Update existing set (including possible exercise name change)
           await supabase.from('workout_sets').update({
+            exercise_name: block.exercise_name,
+            muscle_group: block.muscle_group,
             weight_kg: set.weight_kg,
             reps: set.reps,
             set_number: set.set_number,
@@ -177,6 +225,14 @@ function EditWorkoutPageInner() {
             reps: set.reps,
           });
         }
+      }
+
+      // Update workout_exercises if exercise was swapped
+      if (block.original_exercise_name && block.original_exercise_name !== block.exercise_name) {
+        await supabase.from('workout_exercises')
+          .update({ exercise_name: block.exercise_name, muscle_group: block.muscle_group })
+          .eq('workout_id', workoutId)
+          .eq('exercise_name', block.original_exercise_name);
       }
     }
 
@@ -215,10 +271,28 @@ function EditWorkoutPageInner() {
         <Card key={blockIdx}>
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center justify-between">
-              <span>{block.exercise_name}</span>
-              <Badge variant="secondary" className="text-[10px]">
-                {MUSCLE_GROUP_LABELS[block.muscle_group] || block.muscle_group}
-              </Badge>
+              <span className="flex-1 min-w-0 truncate">{block.exercise_name}</span>
+              <div className="flex items-center gap-1 ml-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                  onClick={() => { setSwapBlockIdx(blockIdx); setShowExerciseDialog(true); }}
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                </Button>
+                <Badge variant="secondary" className="text-[10px]">
+                  {MUSCLE_GROUP_LABELS[block.muscle_group] || block.muscle_group}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => deleteExerciseBlock(blockIdx)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1">
@@ -267,7 +341,7 @@ function EditWorkoutPageInner() {
       ))}
 
       {/* Add Exercise */}
-      <Dialog open={showExerciseDialog} onOpenChange={setShowExerciseDialog}>
+      <Dialog open={showExerciseDialog} onOpenChange={(open) => { setShowExerciseDialog(open); if (!open) setSwapBlockIdx(null); }}>
         <DialogTrigger asChild>
           <Button variant="outline" className="w-full">
             <Plus className="mr-2 h-4 w-4" />
@@ -276,7 +350,7 @@ function EditWorkoutPageInner() {
         </DialogTrigger>
         <DialogContent className="max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>choose exercise</DialogTitle>
+            <DialogTitle>{swapBlockIdx !== null ? 'swap exercise' : 'choose exercise'}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="relative">
