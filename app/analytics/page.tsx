@@ -100,15 +100,26 @@ export default function AnalyticsPage() {
       filtered = sets.filter(s => matchingIds.has(s.workout_id));
     }
 
-    // Group by exercise, count total volume to sort
-    const exerciseMap = new Map<string, number>();
+    // Group by exercise, track muscle group + volume
+    const exerciseMap = new Map<string, { muscle: string; vol: number }>();
     for (const s of filtered) {
+      const prev = exerciseMap.get(s.exercise_name);
       const vol = (s.weight_kg ?? 0) * (s.reps ?? 0);
-      exerciseMap.set(s.exercise_name, (exerciseMap.get(s.exercise_name) ?? 0) + vol);
+      exerciseMap.set(s.exercise_name, {
+        muscle: prev?.muscle || s.muscle_group?.toLowerCase() || '',
+        vol: (prev?.vol ?? 0) + vol,
+      });
     }
 
+    // Sort by muscle group order, then by volume within group
+    const muscleOrder: Record<string, number> = { chest: 0, back: 1, shoulders: 2, legs: 3, arms: 4, core: 5, cardio: 6 };
     return Array.from(exerciseMap.entries())
-      .sort((a, b) => b[1] - a[1])
+      .sort((a, b) => {
+        const ma = muscleOrder[a[1].muscle] ?? 99;
+        const mb = muscleOrder[b[1].muscle] ?? 99;
+        if (ma !== mb) return ma - mb;
+        return b[1].vol - a[1].vol;
+      })
       .map(([name]) => name);
   }, [sets, category, workouts]);
 
