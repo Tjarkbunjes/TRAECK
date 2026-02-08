@@ -242,77 +242,48 @@ function EditWorkoutPageInner() {
     setSaving(true);
 
     try {
+      // 1. Update workout name
       await supabase.from('workouts').update({ name: workoutName || null }).eq('id', workoutId);
 
-      // Delete removed sets
-      if (deletedSetIds.length > 0) {
-        await supabase.from('workout_sets').delete().in('id', deletedSetIds);
-      }
+      // 2. Delete ALL old workout_exercises and workout_sets for this workout
+      await supabase.from('workout_sets').delete().eq('workout_id', workoutId);
+      await supabase.from('workout_exercises').delete().eq('workout_id', workoutId);
 
-      // Delete removed exercises from workout_exercises
-      for (const exName of deletedExerciseNames) {
-        await supabase.from('workout_exercises')
-          .delete()
-          .eq('workout_id', workoutId)
-          .eq('exercise_name', exName);
-      }
-
-      // First: sync workout_exercises (swaps, new exercises, sort order)
-      for (let i = 0; i < exerciseBlocks.length; i++) {
-        const block = exerciseBlocks[i];
-
-        if (block.original_exercise_name && block.original_exercise_name !== block.exercise_name) {
-          // Exercise was swapped — update the existing workout_exercises record
-          const { error } = await supabase.from('workout_exercises')
-            .update({ exercise_name: block.exercise_name, muscle_group: block.muscle_group, sort_order: i })
-            .eq('workout_id', workoutId)
-            .eq('exercise_name', block.original_exercise_name);
-          if (error) console.error('workout_exercises swap error:', error);
-        } else if (!block.original_exercise_name) {
-          // New exercise added in edit mode — create workout_exercises record
-          const { error } = await supabase.from('workout_exercises').insert({
+      // 3. Re-insert workout_exercises with current state
+      if (exerciseBlocks.length > 0) {
+        const { error: exErr } = await supabase.from('workout_exercises').insert(
+          exerciseBlocks.map((block, i) => ({
             workout_id: workoutId,
             exercise_name: block.exercise_name,
             muscle_group: block.muscle_group,
             sort_order: i,
-          });
-          if (error) console.error('workout_exercises insert error:', error);
-        } else {
-          // Unchanged exercise — update sort_order
-          await supabase.from('workout_exercises')
-            .update({ sort_order: i })
-            .eq('workout_id', workoutId)
-            .eq('exercise_name', block.exercise_name);
+          }))
+        );
+        if (exErr) {
+          console.error('workout_exercises insert error:', exErr);
+          toast.error('failed to save exercises.');
         }
       }
 
-      // Second: sync workout_sets
-      for (const block of exerciseBlocks) {
-        for (const set of block.sets) {
-          const hasData = set.weight_kg !== null || set.reps !== null;
+      // 4. Re-insert workout_sets (only sets with actual data)
+      const setsToInsert = exerciseBlocks.flatMap(block =>
+        block.sets
+          .filter(set => set.weight_kg !== null || set.reps !== null)
+          .map(set => ({
+            workout_id: workoutId,
+            exercise_name: block.exercise_name,
+            muscle_group: block.muscle_group,
+            set_number: set.set_number,
+            weight_kg: set.weight_kg,
+            reps: set.reps,
+          }))
+      );
 
-          if (set.id && !set.isNew) {
-            // Update existing set (including possible exercise name change)
-            const { error } = await supabase.from('workout_sets').update({
-              exercise_name: block.exercise_name,
-              muscle_group: block.muscle_group,
-              weight_kg: set.weight_kg,
-              reps: set.reps,
-              set_number: set.set_number,
-            }).eq('id', set.id);
-            if (error) console.error('workout_sets update error:', error);
-          } else if ((set.isNew || !set.id) && hasData) {
-            // Only insert new sets that have actual data
-            const { error } = await supabase.from('workout_sets').insert({
-              workout_id: workoutId,
-              exercise_name: block.exercise_name,
-              muscle_group: block.muscle_group,
-              set_number: set.set_number,
-              weight_kg: set.weight_kg,
-              reps: set.reps,
-            });
-            if (error) console.error('workout_sets insert error:', error);
-          }
+      if (setsToInsert.length > 0) {
+        const { error: setErr } = await supabase.from('workout_sets').insert(setsToInsert);
+        if (setErr) {
+          console.error('workout_sets insert error:', setErr);
+          toast.error('failed to save sets.');
         }
       }
 
