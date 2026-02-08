@@ -1,8 +1,10 @@
 'use client';
 
 import { Suspense, useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { BarcodeScanner } from '@/components/BarcodeScanner';
+
+const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner').then(m => ({ default: m.BarcodeScanner })), { ssr: false });
 import { lookupBarcode } from '@/lib/food-api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

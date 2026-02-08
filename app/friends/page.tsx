@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useFriends, useFriendRequests, useFriendWorkouts, useFriendWeight, useFriendCaloriesWeek } from '@/lib/hooks';
-import { WeightChart } from '@/components/WeightChart';
+
+const WeightChart = dynamic(() => import('@/components/WeightChart').then(m => ({ default: m.WeightChart })), { ssr: false });
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format, addDays, subDays } from 'date-fns';
 import { useAuth, useFoodEntries, useProfile } from '@/lib/hooks';
 import { supabase } from '@/lib/supabase';
@@ -38,7 +38,7 @@ export default function FoodPage() {
       });
   }, [user]);
 
-  const totals = entries.reduce(
+  const totals = useMemo(() => entries.reduce(
     (acc, e) => ({
       calories: acc.calories + e.calories,
       protein: acc.protein + e.protein,
@@ -48,7 +48,7 @@ export default function FoodPage() {
       saturated_fat: acc.saturated_fat + (e.saturated_fat || 0),
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, saturated_fat: 0 }
-  );
+  ), [entries]);
 
   async function handleDelete(id: string) {
     const { error } = await supabase.from('food_entries').delete().eq('id', id);

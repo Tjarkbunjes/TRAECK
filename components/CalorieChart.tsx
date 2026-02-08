@@ -36,9 +36,13 @@ export function CalorieChart({ data, calorieGoal }: CalorieChartProps) {
     );
   }
 
-  const values = data.map((d) => d.calories);
-  const min = Math.floor(Math.min(...values, calorieGoal) * 0.85);
-  const max = Math.ceil(Math.max(...values, calorieGoal) * 1.1);
+  const { min, max } = useMemo(() => {
+    const values = data.map((d) => d.calories);
+    return {
+      min: Math.floor(Math.min(...values, calorieGoal) * 0.85),
+      max: Math.ceil(Math.max(...values, calorieGoal) * 1.1),
+    };
+  }, [data, calorieGoal]);
 
   return (
     <ResponsiveContainer width="100%" height={200}>

@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { useAuth, useWeightEntries, useProfile, useAnalyticsWorkouts, useAnalyticsFood } from '@/lib/hooks';
-import { WeightChart } from '@/components/WeightChart';
-import { CalorieChart } from '@/components/CalorieChart';
-import { MuscleRadarChart } from '@/components/MuscleRadarChart';
-import { ExerciseProgressionChart } from '@/components/ExerciseProgressionChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+const WeightChart = dynamic(() => import('@/components/WeightChart').then(m => ({ default: m.WeightChart })), { ssr: false });
+const CalorieChart = dynamic(() => import('@/components/CalorieChart').then(m => ({ default: m.CalorieChart })), { ssr: false });
+const MuscleRadarChart = dynamic(() => import('@/components/MuscleRadarChart').then(m => ({ default: m.MuscleRadarChart })), { ssr: false });
+const ExerciseProgressionChart = dynamic(() => import('@/components/ExerciseProgressionChart').then(m => ({ default: m.ExerciseProgressionChart })), { ssr: false });
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingDown, TrendingUp, Minus, Loader2 } from 'lucide-react';
 
@@ -70,11 +73,13 @@ export default function AnalyticsPage() {
   }, [dailyFood]);
 
   // Filtered exercises for progression
+  const [showAllExercises, setShowAllExercises] = useState(false);
+
   const filteredExercises = useMemo(() => {
-    const allowedMuscles = CATEGORY_MUSCLES[category];
+    const allowedSet = new Set(CATEGORY_MUSCLES[category]);
     const filtered = category === 'all'
       ? sets
-      : sets.filter((s) => allowedMuscles.includes(s.muscle_group?.toLowerCase() ?? ''));
+      : sets.filter((s) => allowedSet.has(s.muscle_group?.toLowerCase() ?? ''));
 
     // Group by exercise, count total volume to sort
     const exerciseMap = new Map<string, number>();
@@ -249,7 +254,7 @@ export default function AnalyticsPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredExercises.map((name) => (
+                {(showAllExercises ? filteredExercises : filteredExercises.slice(0, 5)).map((name) => (
                   <Card key={name}>
                     <CardContent className="pt-3 pb-2">
                       <ExerciseProgressionChart
@@ -260,6 +265,15 @@ export default function AnalyticsPage() {
                     </CardContent>
                   </Card>
                 ))}
+                {filteredExercises.length > 5 && (
+                  <Button
+                    variant="ghost"
+                    className="w-full text-xs text-muted-foreground"
+                    onClick={() => setShowAllExercises(!showAllExercises)}
+                  >
+                    {showAllExercises ? 'show less' : `show all ${filteredExercises.length} exercises`}
+                  </Button>
+                )}
               </div>
             )}
           </section>

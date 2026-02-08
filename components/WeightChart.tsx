@@ -43,9 +43,13 @@ export function WeightChart({ entries, targetWeight }: WeightChartProps) {
     );
   }
 
-  const weights = entries.map((e) => e.weight_kg);
-  const min = Math.floor(Math.min(...weights) - 1);
-  const max = Math.ceil(Math.max(...weights) + 1);
+  const { min, max } = useMemo(() => {
+    const weights = entries.map((e) => e.weight_kg);
+    return {
+      min: Math.floor(Math.min(...weights) - 1),
+      max: Math.ceil(Math.max(...weights) + 1),
+    };
+  }, [entries]);
 
   return (
     <div>
