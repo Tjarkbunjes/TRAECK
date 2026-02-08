@@ -11,7 +11,7 @@ import { MUSCLE_GROUP_LABELS } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Plus, Dumbbell, FileText, Play, Trash2, ChevronDown, ChevronUp, Pencil, Zap, Copy, CalendarIcon, RotateCw } from 'lucide-react';
+import { Plus, Dumbbell, FileText, Play, Trash2, ChevronDown, ChevronUp, Pencil, Zap, Copy, CalendarIcon } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -361,25 +361,15 @@ export default function WorkoutPage() {
                               {format(new Date(w.date + 'T12:00:00'), 'EEEE, MMM d, yyyy')}
                             </p>
                           </button>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-primary"
-                              onClick={() => router.push(`/workout/active?id=${w.id}`)}
-                            >
-                              <RotateCw className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                              onClick={() => deleteWorkout(w.id)}
-                              disabled={deleting === w.id}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); deleteWorkout(w.id); }}
+                            disabled={deleting === w.id}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
