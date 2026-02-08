@@ -12,9 +12,18 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Save, ArrowLeft, Trash2, Search, RefreshCw } from 'lucide-react';
+import { Plus, Save, ArrowLeft, Trash2, Search, RefreshCw, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  verticalListSortingStrategy, useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface EditSet {
   id?: string;
@@ -25,11 +34,15 @@ interface EditSet {
 }
 
 interface EditExerciseBlock {
+  block_id: string;
   exercise_name: string;
   muscle_group: string;
   original_exercise_name?: string;
   sets: EditSet[];
 }
+
+let nextBlockId = 0;
+function genBlockId() { return `block-${nextBlockId++}`; }
 
 export default function EditWorkoutPage() {
   return (
@@ -55,6 +68,22 @@ function EditWorkoutPageInner() {
   const [swapBlockIdx, setSwapBlockIdx] = useState<number | null>(null);
   const [exerciseSearch, setExerciseSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = exerciseBlocks.findIndex(b => b.block_id === active.id);
+    const newIndex = exerciseBlocks.findIndex(b => b.block_id === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      setExerciseBlocks(prev => arrayMove(prev, oldIndex, newIndex));
+    }
+  }
 
   useEffect(() => {
     if (!workoutId || !user) return;
@@ -89,12 +118,13 @@ function EditWorkoutPageInner() {
     if (exercisesRes.data && exercisesRes.data.length > 0) {
       // Build blocks from workout_exercises (preserves empty exercises)
       const blocks: EditExerciseBlock[] = exercisesRes.data.map((ex: { exercise_name: string; muscle_group: string | null }) => ({
+        block_id: genBlockId(),
         exercise_name: ex.exercise_name,
         muscle_group: ex.muscle_group || '',
         original_exercise_name: ex.exercise_name,
-        sets: setsByExercise[ex.exercise_name] || [
-          { set_number: 1, weight_kg: null, reps: null, isNew: true },
-        ],
+        sets: setsByExercise[ex.exercise_name] || Array.from({ length: 3 }, (_, i) => ({
+          set_number: i + 1, weight_kg: null, reps: null, isNew: true,
+        })),
       }));
       setExerciseBlocks(blocks);
     } else {
@@ -105,6 +135,7 @@ function EditWorkoutPageInner() {
         if (!seen.has(s.exercise_name)) {
           seen.add(s.exercise_name);
           blocks.push({
+            block_id: genBlockId(),
             exercise_name: s.exercise_name,
             muscle_group: s.muscle_group || '',
             original_exercise_name: s.exercise_name,
@@ -194,9 +225,10 @@ function EditWorkoutPageInner() {
       setExerciseBlocks(prev => [
         ...prev,
         {
+          block_id: genBlockId(),
           exercise_name: name,
           muscle_group: muscleGroup,
-          sets: [{ set_number: 1, weight_kg: null, reps: null, isNew: true }],
+          sets: Array.from({ length: 3 }, (_, i) => ({ set_number: i + 1, weight_kg: null, reps: null, isNew: true })),
         },
       ]);
     }
@@ -288,78 +320,21 @@ function EditWorkoutPageInner() {
       </div>
 
       {/* Exercise Blocks */}
-      {exerciseBlocks.map((block, blockIdx) => (
-        <Card key={blockIdx}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center justify-between">
-              <span className="flex-1 min-w-0 truncate">{block.exercise_name}</span>
-              <div className="flex items-center gap-1 ml-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-primary"
-                  onClick={() => { setSwapBlockIdx(blockIdx); setShowExerciseDialog(true); }}
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                </Button>
-                <Badge variant="secondary" className="text-[10px]">
-                  {MUSCLE_GROUP_LABELS[block.muscle_group] || block.muscle_group}
-                </Badge>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                  onClick={() => deleteExerciseBlock(blockIdx)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase mb-1">
-              <span className="w-6 text-center">Set</span>
-              <span className="w-20 text-center">kg</span>
-              <span className="w-16 text-center">Reps</span>
-              <span className="w-9" />
-            </div>
-            {block.sets.map((set, setIdx) => (
-              <div key={setIdx} className="flex items-center gap-2 py-1">
-                <span className="w-6 text-center text-xs text-muted-foreground font-medium font-mono">
-                  {set.set_number}
-                </span>
-                <Input
-                  type="number"
-                  step="0.5"
-                  placeholder="kg"
-                  value={set.weight_kg ?? ''}
-                  onChange={(e) => updateSet(blockIdx, setIdx, { weight_kg: e.target.value ? parseFloat(e.target.value) : null })}
-                  className="h-9 w-20 text-center"
-                />
-                <Input
-                  type="number"
-                  placeholder="Reps"
-                  value={set.reps ?? ''}
-                  onChange={(e) => updateSet(blockIdx, setIdx, { reps: e.target.value ? parseInt(e.target.value) : null })}
-                  className="h-9 w-16 text-center"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => deleteSet(blockIdx, setIdx)}
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-            <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={() => addSet(blockIdx)}>
-              <Plus className="mr-1 h-3 w-3" />
-              add set
-            </Button>
-          </CardContent>
-        </Card>
-      ))}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={exerciseBlocks.map(b => b.block_id)} strategy={verticalListSortingStrategy}>
+          {exerciseBlocks.map((block, blockIdx) => (
+            <SortableEditBlock
+              key={block.block_id}
+              block={block}
+              onSwap={() => { setSwapBlockIdx(blockIdx); setShowExerciseDialog(true); }}
+              onRemove={() => deleteExerciseBlock(blockIdx)}
+              onAddSet={() => addSet(blockIdx)}
+              onUpdateSet={(setIdx, updates) => updateSet(blockIdx, setIdx, updates)}
+              onDeleteSet={(setIdx) => deleteSet(blockIdx, setIdx)}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
 
       {/* Add Exercise */}
       <Dialog open={showExerciseDialog} onOpenChange={(open) => { setShowExerciseDialog(open); if (!open) setSwapBlockIdx(null); }}>
@@ -420,6 +395,90 @@ function EditWorkoutPageInner() {
         <Save className="mr-2 h-5 w-5" />
         {saving ? 'saving...' : 'save changes'}
       </Button>
+    </div>
+  );
+}
+
+function SortableEditBlock({
+  block, onSwap, onRemove, onAddSet, onUpdateSet, onDeleteSet,
+}: {
+  block: EditExerciseBlock;
+  onSwap: () => void;
+  onRemove: () => void;
+  onAddSet: () => void;
+  onUpdateSet: (setIdx: number, updates: Partial<EditSet>) => void;
+  onDeleteSet: (setIdx: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.block_id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <button {...attributes} {...listeners} className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground p-1 -ml-1">
+              <GripVertical className="h-4 w-4" />
+            </button>
+            <CardTitle className="text-base flex-1 flex items-center justify-between">
+              <span>{block.exercise_name}</span>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onSwap} title="swap exercise">
+                  <RefreshCw className="h-3 w-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={onRemove} title="remove exercise">
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+                <Badge variant="secondary" className="text-[10px] ml-1">
+                  {MUSCLE_GROUP_LABELS[block.muscle_group] || block.muscle_group}
+                </Badge>
+              </div>
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase mb-1">
+            <span className="w-8 text-center shrink-0">Set</span>
+            <span className="flex-1 text-center">kg</span>
+            <span className="flex-1 text-center">Reps</span>
+            <span className="w-9 shrink-0" />
+          </div>
+          {block.sets.map((set, setIdx) => (
+            <div key={setIdx} className="flex items-center gap-2 py-1.5">
+              <span className="w-8 text-center text-xs text-muted-foreground font-medium shrink-0">
+                {set.set_number}
+              </span>
+              <Input
+                type="number"
+                step="0.5"
+                placeholder="kg"
+                value={set.weight_kg ?? ''}
+                onChange={(e) => onUpdateSet(setIdx, { weight_kg: e.target.value ? parseFloat(e.target.value) : null })}
+                className="h-9 flex-1 text-center"
+              />
+              <Input
+                type="number"
+                placeholder="Reps"
+                value={set.reps ?? ''}
+                onChange={(e) => onUpdateSet(setIdx, { reps: e.target.value ? parseInt(e.target.value) : null })}
+                className="h-9 flex-1 text-center"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                onClick={() => onDeleteSet(setIdx)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          ))}
+          <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={onAddSet}>
+            <Plus className="mr-1 h-3 w-3" />
+            add set
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
