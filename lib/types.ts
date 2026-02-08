@@ -91,6 +91,15 @@ export interface TemplateExercise {
   default_sets: number;
 }
 
+export interface WorkoutExercise {
+  id: string;
+  workout_id: string;
+  exercise_name: string;
+  muscle_group: string | null;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface FoodFavorite {
   id: string;
   user_id: string;

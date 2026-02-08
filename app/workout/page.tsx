@@ -76,8 +76,16 @@ export default function WorkoutPage() {
       toast.error('failed to start workout.');
       return;
     }
-    const exercises = encodeURIComponent(JSON.stringify(template.exercises));
-    router.push(`/workout/active?id=${data.id}&template=${exercises}`);
+    // Persist exercise blocks in DB
+    await supabase.from('workout_exercises').insert(
+      template.exercises.map((ex, i) => ({
+        workout_id: data.id,
+        exercise_name: ex.exercise_name,
+        muscle_group: ex.muscle_group,
+        sort_order: i,
+      }))
+    );
+    router.push(`/workout/active?id=${data.id}`);
   }
 
   async function startFromTemplate(template: WorkoutTemplate) {
@@ -96,8 +104,16 @@ export default function WorkoutPage() {
       toast.error('failed to start workout.');
       return;
     }
-    const exercises = encodeURIComponent(JSON.stringify(template.exercises));
-    router.push(`/workout/active?id=${data.id}&template=${exercises}`);
+    // Persist exercise blocks in DB
+    await supabase.from('workout_exercises').insert(
+      template.exercises.map((ex, i) => ({
+        workout_id: data.id,
+        exercise_name: ex.exercise_name,
+        muscle_group: ex.muscle_group,
+        sort_order: i,
+      }))
+    );
+    router.push(`/workout/active?id=${data.id}`);
   }
 
   async function toggleWorkoutDetails(workoutId: string) {
