@@ -14,14 +14,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingDown, TrendingUp, Minus, Loader2 } from 'lucide-react';
 
 type TimeRange = '7' | '30' | '90' | '365';
-type Category = 'all' | 'push' | 'pull' | 'legs';
-
-const CATEGORY_MUSCLES: Record<Category, string[]> = {
-  all: [],
-  push: ['chest', 'shoulders'],
-  pull: ['back', 'arms'],
-  legs: ['legs', 'core'],
-};
+type Category = string; // 'all' or a workout name
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
@@ -35,6 +28,28 @@ export default function AnalyticsPage() {
 
   const [radarMode, setRadarMode] = useState<'sets' | 'reps'>('sets');
   const [category, setCategory] = useState<Category>('all');
+
+  // Build workout name categories from actual data
+  const workoutCategories = useMemo(() => {
+    const names = new Map<string, number>();
+    for (const w of workouts) {
+      const name = w.name || 'Workout';
+      names.set(name, (names.get(name) ?? 0) + 1);
+    }
+    // Sort by frequency (most used first)
+    return Array.from(names.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name]) => name);
+  }, [workouts]);
+
+  // Map workout_id → workout name for filtering sets
+  const workoutNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const w of workouts) {
+      map.set(w.id, w.name || 'Workout');
+    }
+    return map;
+  }, [workouts]);
 
   // Weight stats
   const latest = weightEntries.length > 0 ? weightEntries[weightEntries.length - 1] : null;
@@ -76,10 +91,14 @@ export default function AnalyticsPage() {
   const [showAllExercises, setShowAllExercises] = useState(false);
 
   const filteredExercises = useMemo(() => {
-    const allowedSet = new Set(CATEGORY_MUSCLES[category]);
-    const filtered = category === 'all'
-      ? sets
-      : sets.filter((s) => allowedSet.has(s.muscle_group?.toLowerCase() ?? ''));
+    let filtered = sets;
+    if (category !== 'all') {
+      // Get workout IDs that match the selected workout name
+      const matchingIds = new Set(
+        workouts.filter(w => (w.name || 'Workout') === category).map(w => w.id)
+      );
+      filtered = sets.filter(s => matchingIds.has(s.workout_id));
+    }
 
     // Group by exercise, count total volume to sort
     const exerciseMap = new Map<string, number>();
@@ -91,7 +110,7 @@ export default function AnalyticsPage() {
     return Array.from(exerciseMap.entries())
       .sort((a, b) => b[1] - a[1])
       .map(([name]) => name);
-  }, [sets, category]);
+  }, [sets, category, workouts]);
 
   const isLoading = weightLoading || workoutLoading || foodLoading;
 
@@ -236,14 +255,20 @@ export default function AnalyticsPage() {
             <h2 className="text-sm font-medium text-muted-foreground">progression</h2>
 
             {/* Category filter */}
-            <div className="flex gap-1.5">
-              {(['all', 'push', 'pull', 'legs'] as Category[]).map((cat) => (
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              <button
+                onClick={() => setCategory('all')}
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors whitespace-nowrap shrink-0 ${category === 'all' ? 'bg-[#2626FF] text-white' : 'bg-[#1E1E1E] text-muted-foreground hover:text-foreground'}`}
+              >
+                all
+              </button>
+              {workoutCategories.map((name) => (
                 <button
-                  key={cat}
-                  onClick={() => setCategory(cat)}
-                  className={`px-3 py-1.5 text-xs rounded-md transition-colors ${category === cat ? 'bg-[#2626FF] text-white' : 'bg-[#1E1E1E] text-muted-foreground hover:text-foreground'}`}
+                  key={name}
+                  onClick={() => setCategory(name)}
+                  className={`px-3 py-1.5 text-xs rounded-md transition-colors whitespace-nowrap shrink-0 ${category === name ? 'bg-[#2626FF] text-white' : 'bg-[#1E1E1E] text-muted-foreground hover:text-foreground'}`}
                 >
-                  {cat}
+                  {name}
                 </button>
               ))}
             </div>

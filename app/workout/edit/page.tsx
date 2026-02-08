@@ -452,11 +452,14 @@ function SortableEditBlock({
                 {set.set_number}
               </span>
               <Input
-                type="number"
-                step="0.5"
+                type="text"
+                inputMode="decimal"
                 placeholder="kg"
                 value={set.weight_kg ?? ''}
-                onChange={(e) => onUpdateSet(setIdx, { weight_kg: e.target.value ? parseFloat(e.target.value) : null })}
+                onChange={(e) => {
+                  const v = e.target.value.replace(',', '.');
+                  onUpdateSet(setIdx, { weight_kg: v ? parseFloat(v) : null });
+                }}
                 className="h-9 flex-1 text-center"
               />
               <Input
