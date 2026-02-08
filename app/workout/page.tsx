@@ -11,7 +11,7 @@ import { MUSCLE_GROUP_LABELS } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Plus, Dumbbell, FileText, Play, Trash2, ChevronDown, ChevronUp, Pencil, Zap, Copy, CalendarIcon } from 'lucide-react';
+import { Plus, Dumbbell, FileText, Play, Trash2, ChevronDown, ChevronUp, Pencil, Zap, Copy, CalendarIcon, RotateCw } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -340,99 +340,152 @@ export default function WorkoutPage() {
               no workouts recorded yet.
             </p>
           ) : (
-            workouts.map((w) => {
-              const isExpanded = expandedWorkout === w.id;
-              const sets = workoutSets[w.id] || [];
-              const exerciseGroups = groupSetsByExercise(sets);
+            <>
+              {/* In-Progress Workouts */}
+              {workouts.filter(w => !w.finished_at).length > 0 && (
+                <>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider pt-1 pb-1">in progress</div>
+                  {workouts.filter(w => !w.finished_at).map((w) => (
+                    <Card key={w.id} className="border-primary/30">
+                      <CardContent className="p-3">
+                        <div className="flex items-center justify-between">
+                          <button
+                            className="flex-1 text-left"
+                            onClick={() => router.push(`/workout/active?id=${w.id}`)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{w.name || 'Workout'}</p>
+                              <Badge variant="default" className="text-[10px] h-4">active</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(w.date + 'T12:00:00'), 'EEEE, MMM d, yyyy')}
+                            </p>
+                          </button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-primary"
+                              onClick={() => router.push(`/workout/active?id=${w.id}`)}
+                            >
+                              <RotateCw className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => deleteWorkout(w.id)}
+                              disabled={deleting === w.id}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                  <div className="border-t border-border my-2" />
+                </>
+              )}
 
-              return (
-                <Card key={w.id}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <button
-                        className="flex-1 text-left"
-                        onClick={() => toggleWorkoutDetails(w.id)}
-                      >
-                        <p className="font-medium">{w.name || 'Workout'}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(w.date + 'T12:00:00'), 'EEEE, MMM d, yyyy')}
-                        </p>
-                      </button>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
+              {/* Finished Workouts */}
+              {workouts.filter(w => w.finished_at).length > 0 && (
+                <div className="text-xs text-muted-foreground uppercase tracking-wider pt-1 pb-1">finished</div>
+              )}
+              {workouts.filter(w => w.finished_at).map((w) => {
+                const isExpanded = expandedWorkout === w.id;
+                const sets = workoutSets[w.id] || [];
+                const exerciseGroups = groupSetsByExercise(sets);
+
+                return (
+                  <Card key={w.id}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between">
+                        <button
+                          className="flex-1 text-left"
                           onClick={() => toggleWorkoutDetails(w.id)}
                         >
-                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-primary"
-                          onClick={() => router.push(`/workout/edit?id=${w.id}`)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => deleteWorkout(w.id)}
-                          disabled={deleting === w.id}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          <p className="font-medium">{w.name || 'Workout'}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(w.date + 'T12:00:00'), 'EEEE, MMM d, yyyy')}
+                          </p>
+                        </button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => toggleWorkoutDetails(w.id)}
+                          >
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={() => router.push(`/workout/edit?id=${w.id}`)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => deleteWorkout(w.id)}
+                            disabled={deleting === w.id}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Expanded Details */}
-                    {isExpanded && (
-                      <div className="mt-3 pt-3 border-t border-border space-y-3">
-                        {sets.length === 0 ? (
-                          <p className="text-xs text-muted-foreground">no sets recorded.</p>
-                        ) : (
-                          <>
-                            {Object.entries(exerciseGroups).map(([exerciseName, exSets]) => (
-                              <div key={exerciseName}>
-                                <div className="flex items-center justify-between mb-1">
-                                  <p className="text-sm font-medium">{exerciseName}</p>
-                                  {exSets[0]?.muscle_group && (
-                                    <Badge variant="secondary" className="text-[10px]">
-                                      {MUSCLE_GROUP_LABELS[exSets[0].muscle_group] || exSets[0].muscle_group}
-                                    </Badge>
-                                  )}
+                      {/* Expanded Details */}
+                      {isExpanded && (
+                        <div className="mt-3 pt-3 border-t border-border space-y-3">
+                          {sets.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">no sets recorded.</p>
+                          ) : (
+                            <>
+                              {Object.entries(exerciseGroups).map(([exerciseName, exSets]) => (
+                                <div key={exerciseName}>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <p className="text-sm font-medium">{exerciseName}</p>
+                                    {exSets[0]?.muscle_group && (
+                                      <Badge variant="secondary" className="text-[10px]">
+                                        {MUSCLE_GROUP_LABELS[exSets[0].muscle_group] || exSets[0].muscle_group}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="space-y-0.5">
+                                    {exSets.map((s) => (
+                                      <div key={s.id} className="flex items-center gap-3 text-xs text-muted-foreground">
+                                        <span className="w-8">Set {s.set_number}</span>
+                                        <span>{s.weight_kg ?? '–'} kg</span>
+                                        <span>× {s.reps ?? '–'}</span>
+                                        {s.rpe && <span className="text-[10px]">RPE {s.rpe}</span>}
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                                <div className="space-y-0.5">
-                                  {exSets.map((s) => (
-                                    <div key={s.id} className="flex items-center gap-3 text-xs text-muted-foreground">
-                                      <span className="w-8">Set {s.set_number}</span>
-                                      <span>{s.weight_kg ?? '–'} kg</span>
-                                      <span>× {s.reps ?? '–'}</span>
-                                      {s.rpe && <span className="text-[10px]">RPE {s.rpe}</span>}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full text-xs"
-                              onClick={() => saveWorkoutAsTemplate(w.id, w.name)}
-                            >
-                              <FileText className="mr-1.5 h-3.5 w-3.5" />
-                              save as template
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })
+                              ))}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full text-xs"
+                                onClick={() => saveWorkoutAsTemplate(w.id, w.name)}
+                              >
+                                <FileText className="mr-1.5 h-3.5 w-3.5" />
+                                save as template
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </>
           )}
         </TabsContent>
 

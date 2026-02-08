@@ -271,7 +271,7 @@ function ActiveWorkoutPageInner() {
         }
       }
     }
-    await supabase.from('workouts').update({ name: workoutName || null }).eq('id', workoutId);
+    await supabase.from('workouts').update({ name: workoutName || null, finished_at: new Date().toISOString() }).eq('id', workoutId);
     toast.success('workout complete.');
     router.push('/workout');
   }
