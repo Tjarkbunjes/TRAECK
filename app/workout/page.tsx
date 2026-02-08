@@ -17,12 +17,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { WorkoutTemplate, WorkoutSet } from '@/lib/types';
-import { DEFAULT_TEMPLATES, type DefaultTemplate } from '@/lib/default-templates';
 
 export default function WorkoutPage() {
   const { user } = useAuth();
   const { workouts, loading, refresh } = useWorkouts();
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const [defaultTemplates, setDefaultTemplates] = useState<WorkoutTemplate[]>([]);
   const [expandedWorkout, setExpandedWorkout] = useState<string | null>(null);
   const [workoutSets, setWorkoutSets] = useState<Record<string, WorkoutSet[]>>({});
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -32,13 +32,24 @@ export default function WorkoutPage() {
 
   useEffect(() => {
     if (!user) return;
+    // Load own templates
     supabase
       .from('workout_templates')
       .select('*')
       .eq('user_id', user.id)
+      .eq('is_default', false)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         if (data) setTemplates(data);
+      });
+    // Load TRÆCK default templates
+    supabase
+      .from('workout_templates')
+      .select('*')
+      .eq('is_default', true)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => {
+        if (data) setDefaultTemplates(data);
       });
   }, [user]);
 
@@ -57,34 +68,6 @@ export default function WorkoutPage() {
       toast.error('failed to start workout.');
       return;
     }
-    router.push(`/workout/active?id=${data.id}`);
-  }
-
-  async function startFromDefault(template: DefaultTemplate) {
-    if (!user) return;
-    const { data, error } = await supabase
-      .from('workouts')
-      .insert({
-        user_id: user.id,
-        date: format(workoutDate, 'yyyy-MM-dd'),
-        name: template.name,
-      })
-      .select()
-      .single();
-
-    if (error || !data) {
-      toast.error('failed to start workout.');
-      return;
-    }
-    // Persist exercise blocks in DB
-    await supabase.from('workout_exercises').insert(
-      template.exercises.map((ex, i) => ({
-        workout_id: data.id,
-        exercise_name: ex.exercise_name,
-        muscle_group: ex.muscle_group,
-        sort_order: i,
-      }))
-    );
     router.push(`/workout/active?id=${data.id}`);
   }
 
@@ -150,12 +133,13 @@ export default function WorkoutPage() {
     setDeleting(null);
   }
 
-  async function copyDefaultToOwn(template: DefaultTemplate) {
+  async function copyDefaultToOwn(template: WorkoutTemplate) {
     if (!user) return;
     const { error } = await supabase.from('workout_templates').insert({
       user_id: user.id,
       name: template.name,
       exercises: template.exercises,
+      is_default: false,
     });
     if (error) {
       toast.error(`error: ${error.message}`);
@@ -165,6 +149,7 @@ export default function WorkoutPage() {
         .from('workout_templates')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_default', false)
         .order('created_at', { ascending: false });
       if (data) setTemplates(data);
     }
@@ -242,21 +227,25 @@ export default function WorkoutPage() {
                 ))}
               </>
             )}
-            <div className="text-xs text-muted-foreground uppercase tracking-wider pt-2 pb-1">tr&aelig;ck templates</div>
-            {DEFAULT_TEMPLATES.map((t) => (
-              <Button
-                key={t.id}
-                variant="outline"
-                className="w-full h-12 justify-start text-left"
-                onClick={() => { setShowStartDialog(false); startFromDefault(t); }}
-              >
-                <Play className="mr-3 h-5 w-5 text-[#2626FF]" />
-                <div>
-                  <p className="font-medium">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.exercises.length} exercises</p>
-                </div>
-              </Button>
-            ))}
+            {defaultTemplates.length > 0 && (
+              <>
+                <div className="text-xs text-muted-foreground uppercase tracking-wider pt-2 pb-1">tr&aelig;ck templates</div>
+                {defaultTemplates.map((t) => (
+                  <Button
+                    key={t.id}
+                    variant="outline"
+                    className="w-full h-12 justify-start text-left"
+                    onClick={() => { setShowStartDialog(false); startFromTemplate(t); }}
+                  >
+                    <Play className="mr-3 h-5 w-5 text-[#2626FF]" />
+                    <div>
+                      <p className="font-medium">{t.name}</p>
+                      <p className="text-xs text-muted-foreground">{t.exercises.length} exercises</p>
+                    </div>
+                  </Button>
+                ))}
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -399,30 +388,34 @@ export default function WorkoutPage() {
           )}
 
           {/* TRÆCK standard templates */}
-          <div className="text-xs text-muted-foreground pt-2 pb-1">TR&AElig;CK templates</div>
-          {DEFAULT_TEMPLATES.map((t) => (
-            <Card key={t.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => startFromDefault(t)}>
-              <CardContent className="p-3 flex items-center justify-between">
-                <div>
-                  <p className="font-medium">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.exercises.length} exercises
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-primary"
-                    onClick={(e) => { e.stopPropagation(); copyDefaultToOwn(t); }}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                  <Play className="h-4 w-4 text-[#2626FF]" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {defaultTemplates.length > 0 && (
+            <>
+              <div className="text-xs text-muted-foreground pt-2 pb-1">TR&AElig;CK templates</div>
+              {defaultTemplates.map((t) => (
+                <Card key={t.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => startFromTemplate(t)}>
+                  <CardContent className="p-3 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{t.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t.exercises.length} exercises
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                        onClick={(e) => { e.stopPropagation(); copyDefaultToOwn(t); }}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                      <Play className="h-4 w-4 text-[#2626FF]" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

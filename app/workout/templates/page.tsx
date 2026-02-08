@@ -3,9 +3,9 @@
 import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/hooks';
+import { isAdmin } from '@/lib/admin';
 import { exercises as exerciseDB, searchExercises, muscleGroups } from '@/lib/exercises';
 import { MUSCLE_GROUP_LABELS, type TemplateExercise, type WorkoutTemplate } from '@/lib/types';
-import { DEFAULT_TEMPLATES } from '@/lib/default-templates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Plus, Trash2, Save, Search, Pencil, Copy } from 'lucide-react';
-import type { DefaultTemplate } from '@/lib/default-templates';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -31,7 +30,9 @@ function TemplatesPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const [defaultTemplates, setDefaultTemplates] = useState<WorkoutTemplate[]>([]);
   const [editingTemplate, setEditingTemplate] = useState<WorkoutTemplate | null>(null);
+  const [editingIsDefault, setEditingIsDefault] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [formName, setFormName] = useState('');
   const [formExercises, setFormExercises] = useState<TemplateExercise[]>([]);
@@ -40,8 +41,13 @@ function TemplatesPage() {
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [didAutoEdit, setDidAutoEdit] = useState(false);
 
+  const admin = isAdmin(user?.email);
+
   useEffect(() => {
-    if (user) loadTemplates();
+    if (user) {
+      loadTemplates();
+      loadDefaultTemplates();
+    }
   }, [user]);
 
   // Auto-open edit form when navigating with ?edit=ID
@@ -50,7 +56,7 @@ function TemplatesPage() {
     if (editId && templates.length > 0 && !didAutoEdit) {
       const t = templates.find((tpl) => tpl.id === editId);
       if (t) {
-        startEdit(t);
+        startEdit(t, false);
         setDidAutoEdit(true);
       }
     }
@@ -62,19 +68,31 @@ function TemplatesPage() {
       .from('workout_templates')
       .select('*')
       .eq('user_id', user.id)
+      .eq('is_default', false)
       .order('created_at', { ascending: false });
     if (data) setTemplates(data);
   }
 
-  function startCreate() {
+  async function loadDefaultTemplates() {
+    const { data } = await supabase
+      .from('workout_templates')
+      .select('*')
+      .eq('is_default', true)
+      .order('created_at', { ascending: true });
+    if (data) setDefaultTemplates(data);
+  }
+
+  function startCreate(asDefault: boolean) {
     setEditingTemplate(null);
+    setEditingIsDefault(asDefault);
     setFormName('');
     setFormExercises([]);
     setShowForm(true);
   }
 
-  function startEdit(template: WorkoutTemplate) {
+  function startEdit(template: WorkoutTemplate, isDefault: boolean) {
     setEditingTemplate(template);
+    setEditingIsDefault(isDefault);
     setFormName(template.name);
     setFormExercises([...template.exercises]);
     setShowForm(true);
@@ -83,6 +101,7 @@ function TemplatesPage() {
   function cancelForm() {
     setShowForm(false);
     setEditingTemplate(null);
+    setEditingIsDefault(false);
     setFormName('');
     setFormExercises([]);
   }
@@ -94,7 +113,6 @@ function TemplatesPage() {
     }
 
     if (editingTemplate) {
-      // Update existing template
       const { error } = await supabase
         .from('workout_templates')
         .update({
@@ -109,13 +127,14 @@ function TemplatesPage() {
         toast.success('template updated.');
         cancelForm();
         loadTemplates();
+        loadDefaultTemplates();
       }
     } else {
-      // Create new template
       const { error } = await supabase.from('workout_templates').insert({
         user_id: user.id,
         name: formName.trim(),
         exercises: formExercises,
+        is_default: editingIsDefault,
       });
       if (error) {
         console.error('Template save error:', error);
@@ -124,6 +143,7 @@ function TemplatesPage() {
         toast.success('template saved.');
         cancelForm();
         loadTemplates();
+        loadDefaultTemplates();
       }
     }
   }
@@ -135,15 +155,17 @@ function TemplatesPage() {
     } else {
       toast.success('template deleted.');
       loadTemplates();
+      loadDefaultTemplates();
     }
   }
 
-  async function copyDefaultToOwn(template: DefaultTemplate) {
+  async function copyDefaultToOwn(template: WorkoutTemplate) {
     if (!user) return;
     const { error } = await supabase.from('workout_templates').insert({
       user_id: user.id,
       name: template.name,
       exercises: template.exercises,
+      is_default: false,
     });
     if (error) {
       toast.error(`error: ${error.message}`);
@@ -176,7 +198,7 @@ function TemplatesPage() {
 
       {!showForm ? (
         <>
-          <Button onClick={startCreate} className="w-full">
+          <Button onClick={() => startCreate(false)} className="w-full">
             <Plus className="mr-2 h-4 w-4" />
             create new template
           </Button>
@@ -199,7 +221,7 @@ function TemplatesPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-primary"
-                        onClick={() => startEdit(t)}
+                        onClick={() => startEdit(t, false)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -225,8 +247,21 @@ function TemplatesPage() {
 
           {/* TRÆCK standard templates */}
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground pt-1 pb-0.5">TR&AElig;CK templates</p>
-            {DEFAULT_TEMPLATES.map((t) => (
+            <div className="flex items-center justify-between pt-1 pb-0.5">
+              <p className="text-xs text-muted-foreground">TR&AElig;CK templates</p>
+              {admin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-[#2626FF]"
+                  onClick={() => startCreate(true)}
+                >
+                  <Plus className="mr-1 h-3 w-3" />
+                  add
+                </Button>
+              )}
+            </div>
+            {defaultTemplates.map((t) => (
               <Card key={t.id} className="border-[#2626FF]/20">
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">
@@ -236,24 +271,52 @@ function TemplatesPage() {
                         {t.exercises.map(e => e.exercise_name).join(', ')}
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-primary ml-2"
-                      onClick={() => copyDefaultToOwn(t)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1 ml-2">
+                      {admin ? (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-[#2626FF] hover:text-[#2626FF]"
+                            onClick={() => startEdit(t, true)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => deleteTemplate(t.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary"
+                          onClick={() => copyDefaultToOwn(t)}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))}
+            {defaultTemplates.length === 0 && (
+              <p className="text-center text-muted-foreground py-4 text-sm">
+                no default templates yet.
+              </p>
+            )}
           </div>
         </>
       ) : (
         <div className="space-y-4">
           <h2 className="text-sm font-semibold text-muted-foreground">
-            {editingTemplate ? 'edit template' : 'new template'}
+            {editingTemplate ? 'edit template' : editingIsDefault ? 'new TR\u00C6CK template' : 'new template'}
           </h2>
 
           <div className="space-y-2">

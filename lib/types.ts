@@ -82,6 +82,7 @@ export interface WorkoutTemplate {
   user_id: string;
   name: string;
   exercises: TemplateExercise[];
+  is_default: boolean;
   created_at: string;
 }
 
