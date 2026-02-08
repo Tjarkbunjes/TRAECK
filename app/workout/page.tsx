@@ -344,7 +344,7 @@ export default function WorkoutPage() {
               {/* In-Progress Workouts */}
               {workouts.filter(w => !w.finished_at).length > 0 && (
                 <>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider pt-1 pb-1">in progress</div>
+                  <div className="text-xs text-muted-foreground tracking-wider pt-1 pb-1">in progress</div>
                   {workouts.filter(w => !w.finished_at).map((w) => (
                     <Card key={w.id} className="border-primary/30">
                       <CardContent className="p-3">
@@ -361,15 +361,26 @@ export default function WorkoutPage() {
                               {format(new Date(w.date + 'T12:00:00'), 'EEEE, MMM d, yyyy')}
                             </p>
                           </button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => { e.stopPropagation(); deleteWorkout(w.id); }}
-                            disabled={deleting === w.id}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-primary"
+                              onClick={(e) => { e.stopPropagation(); router.push(`/workout/active?id=${w.id}`); }}
+                              title="continue"
+                            >
+                              <Play className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={(e) => { e.stopPropagation(); deleteWorkout(w.id); }}
+                              disabled={deleting === w.id}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -380,7 +391,7 @@ export default function WorkoutPage() {
 
               {/* Finished Workouts */}
               {workouts.filter(w => w.finished_at).length > 0 && (
-                <div className="text-xs text-muted-foreground uppercase tracking-wider pt-1 pb-1">finished</div>
+                <div className="text-xs text-muted-foreground tracking-wider pt-1 pb-1">finished</div>
               )}
               {workouts.filter(w => w.finished_at).map((w) => {
                 const isExpanded = expandedWorkout === w.id;
