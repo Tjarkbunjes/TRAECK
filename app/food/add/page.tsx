@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Search, Star, Clock, Save, ScanBarcode } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { MEAL_LABELS, type MealType, type FoodProduct } from '@/lib/types';
+import { MEAL_LABELS, type MealType, type FoodProduct, type MealTemplate } from '@/lib/types';
 import Link from 'next/link';
 
 export default function AddFoodPage() {
@@ -48,6 +48,10 @@ function AddFoodPageInner() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<FoodProduct[]>([]);
   const [searching, setSearching] = useState(false);
+
+  // Meal templates (quick add)
+  const [meals, setMeals] = useState<MealTemplate[]>([]);
+  const [addingMeal, setAddingMeal] = useState<string | null>(null);
 
   // Favorites & Recent
   const [favorites, setFavorites] = useState<FoodProduct[]>([]);
@@ -91,8 +95,42 @@ function AddFoodPageInner() {
   }, [editId, prefillParam]);
 
   useEffect(() => {
+    if (!user) return;
     loadFavoritesAndRecent();
+    supabase
+      .from('meal_templates')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { if (data) setMeals(data as MealTemplate[]); });
   }, [user]);
+
+  async function addMealToLog(meal: MealTemplate) {
+    if (!user) return;
+    setAddingMeal(meal.id);
+    const entries = meal.items.map((item) => ({
+      user_id: user.id,
+      date,
+      meal_type: meal.meal_type || mealType,
+      food_name: item.food_name,
+      barcode: item.barcode || null,
+      serving_grams: item.serving_grams,
+      calories: item.calories,
+      protein: item.protein,
+      carbs: item.carbs,
+      fat: item.fat,
+      sugar: item.sugar || 0,
+      saturated_fat: item.saturated_fat || 0,
+    }));
+    const { error } = await supabase.from('food_entries').insert(entries);
+    if (error) {
+      toast.error(`error: ${error.message}`);
+    } else {
+      toast.success(`"${meal.name}" added.`);
+      router.push('/food');
+    }
+    setAddingMeal(null);
+  }
 
   async function loadFavoritesAndRecent() {
     if (!user) return;
@@ -244,6 +282,26 @@ function AddFoodPageInner() {
           </button>
         ))}
       </div>
+
+      {/* Quick Add Meals */}
+      {meals.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2">quick add</h2>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {meals.map((meal) => (
+              <button
+                key={meal.id}
+                onClick={() => addMealToLog(meal)}
+                disabled={addingMeal === meal.id}
+                className="shrink-0 rounded-lg border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-accent/50 disabled:opacity-50"
+              >
+                <p className="text-sm font-medium whitespace-nowrap">{meal.name}</p>
+                <p className="text-[10px] text-muted-foreground font-mono">{Math.round(meal.total_calories)} kcal</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="flex gap-2">
