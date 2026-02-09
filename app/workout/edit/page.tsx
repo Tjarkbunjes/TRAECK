@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/hooks';
 import { exercises as exerciseDB, searchExercises, muscleGroups } from '@/lib/exercises';
 import { MUSCLE_GROUP_LABELS } from '@/lib/types';
 import type { WorkoutSet } from '@/lib/types';
+import { MuscleMap } from '@/components/MuscleMap';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DecimalInput } from '@/components/DecimalInput';
@@ -381,12 +382,15 @@ function EditWorkoutPageInner() {
                 <button
                   key={i}
                   onClick={() => addExercise(ex.name, ex.muscleGroup)}
-                  className="w-full text-left p-2 rounded-md hover:bg-accent/50 transition-colors text-sm"
+                  className="w-full text-left p-2 rounded-md hover:bg-accent/50 transition-colors text-sm flex items-center gap-3"
                 >
-                  <span className="font-medium">{ex.name}</span>
-                  <span className="text-xs text-muted-foreground ml-2">
-                    {MUSCLE_GROUP_LABELS[ex.muscleGroup]}
-                  </span>
+                  <MuscleMap muscleGroup={ex.muscleGroup} size={36} className="shrink-0" />
+                  <div>
+                    <span className="font-medium">{ex.name}</span>
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {MUSCLE_GROUP_LABELS[ex.muscleGroup]}
+                    </span>
+                  </div>
                 </button>
               ))}
             </div>

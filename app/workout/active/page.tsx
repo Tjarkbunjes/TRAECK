@@ -8,6 +8,7 @@ import { exercises as exerciseDB, searchExercises, muscleGroups } from '@/lib/ex
 import { MUSCLE_GROUP_LABELS } from '@/lib/types';
 import type { WorkoutExercise } from '@/lib/types';
 import { WorkoutSetRow } from '@/components/WorkoutSetRow';
+import { MuscleMap } from '@/components/MuscleMap';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -359,10 +360,13 @@ function ActiveWorkoutPageInner() {
                 <button
                   key={i}
                   onClick={() => addExercise(ex.name, ex.muscleGroup)}
-                  className="w-full text-left p-2 rounded-md hover:bg-accent/50 transition-colors text-sm"
+                  className="w-full text-left p-2 rounded-md hover:bg-accent/50 transition-colors text-sm flex items-center gap-3"
                 >
-                  <span className="font-medium">{ex.name}</span>
-                  <span className="text-xs text-muted-foreground ml-2">{MUSCLE_GROUP_LABELS[ex.muscleGroup]}</span>
+                  <MuscleMap muscleGroup={ex.muscleGroup} size={36} className="shrink-0" />
+                  <div>
+                    <span className="font-medium">{ex.name}</span>
+                    <span className="text-xs text-muted-foreground ml-2">{MUSCLE_GROUP_LABELS[ex.muscleGroup]}</span>
+                  </div>
                 </button>
               ))}
             </div>

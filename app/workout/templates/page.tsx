@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/hooks';
 import { isAdmin } from '@/lib/admin';
 import { exercises as exerciseDB, searchExercises, muscleGroups } from '@/lib/exercises';
 import { MUSCLE_GROUP_LABELS, type TemplateExercise, type WorkoutTemplate } from '@/lib/types';
+import { MuscleMap } from '@/components/MuscleMap';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -418,9 +419,10 @@ function TemplatesPage() {
                     <button
                       key={i}
                       onClick={() => addExerciseToForm(ex.name, ex.muscleGroup)}
-                      className="w-full text-left p-2 rounded-md hover:bg-accent/50 transition-colors text-sm"
+                      className="w-full text-left p-2 rounded-md hover:bg-accent/50 transition-colors text-sm flex items-center gap-3"
                     >
-                      {ex.name}
+                      <MuscleMap muscleGroup={ex.muscleGroup} size={36} className="shrink-0" />
+                      <span>{ex.name}</span>
                     </button>
                   ))}
                 </div>
