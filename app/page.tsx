@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { format, startOfWeek, addDays } from 'date-fns';
+import { format, startOfWeek, addDays, subWeeks, isSameWeek } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile } from '@/lib/hooks';
 import { MacroRings } from '@/components/MacroRings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus } from 'lucide-react';
+import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
@@ -21,6 +21,7 @@ export default function HomePage() {
   const { entries: todayEntries } = useFoodEntries(today);
   const { entries: weightEntries } = useWeightEntries(30);
   const { workouts } = useWorkouts();
+  const [weekOffset, setWeekOffset] = useState(0);
   const [weeklyFood, setWeeklyFood] = useState<Map<number, number>>(new Map());
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Map<number, string>>(new Map());
   const [weeklyWeight, setWeeklyWeight] = useState<Map<number, number>>(new Map());
@@ -35,10 +36,14 @@ export default function HomePage() {
   }, [user, authLoading, router]);
 
   // Calculate weekly consistency
+  const selectedWeekStart = subWeeks(startOfWeek(new Date(), { weekStartsOn: 1 }), -weekOffset);
+  const selectedWeekEnd = addDays(selectedWeekStart, 6);
+  const isCurrentWeek = weekOffset === 0;
+
   useEffect(() => {
     if (!user) return;
-    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const weekEnd = addDays(weekStart, 6);
+    const weekStart = selectedWeekStart;
+    const weekEnd = selectedWeekEnd;
     const dates: string[] = [];
     for (let i = 0; i < 7; i++) {
       dates.push(format(addDays(weekStart, i), 'yyyy-MM-dd'));
@@ -99,7 +104,7 @@ export default function HomePage() {
           setWeeklyWeight(map);
         }
       });
-  }, [user]);
+  }, [user, weekOffset]);
 
   const totals = todayEntries.reduce(
     (acc, e) => ({
@@ -229,6 +234,25 @@ export default function HomePage() {
         return (
           <Card>
             <CardContent className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekOffset(o => o - 1)}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <button
+                  onClick={() => setWeekOffset(0)}
+                  className="text-sm font-medium text-center"
+                >
+                  {isCurrentWeek ? 'this week' : `${format(selectedWeekStart, 'MMM d')} – ${format(selectedWeekEnd, 'MMM d')}`}
+                  {isCurrentWeek && (
+                    <span className="block text-[10px] text-muted-foreground font-normal">
+                      {format(selectedWeekStart, 'MMM d')} – {format(selectedWeekEnd, 'MMM d')}
+                    </span>
+                  )}
+                </button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekOffset(o => o + 1)} disabled={isCurrentWeek}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm font-medium flex items-center gap-1.5">
