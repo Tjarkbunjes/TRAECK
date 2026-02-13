@@ -60,24 +60,28 @@ export default function AnalyticsPage() {
     ? Math.round((last7.reduce((s, e) => s + e.weight_kg, 0) / last7.length) * 10) / 10
     : null;
 
-  // Nutrition stats
-  const avgCalories = dailyFood.length > 0
-    ? Math.round(dailyFood.reduce((s, d) => s + d.calories, 0) / dailyFood.length)
+  // Nutrition stats — exclude today (incomplete)
+  const today = new Date().toISOString().slice(0, 10);
+  const completedFood = dailyFood.filter(d => d.date < today);
+
+  const avgCalories = completedFood.length > 0
+    ? Math.round(completedFood.reduce((s, d) => s + d.calories, 0) / completedFood.length)
     : 0;
-  const avgProtein = dailyFood.length > 0
-    ? Math.round(dailyFood.reduce((s, d) => s + d.protein, 0) / dailyFood.length)
+  const avgProtein = completedFood.length > 0
+    ? Math.round(completedFood.reduce((s, d) => s + d.protein, 0) / completedFood.length)
     : 0;
-  const avgCarbs = dailyFood.length > 0
-    ? Math.round(dailyFood.reduce((s, d) => s + d.carbs, 0) / dailyFood.length)
+  const avgCarbs = completedFood.length > 0
+    ? Math.round(completedFood.reduce((s, d) => s + d.carbs, 0) / completedFood.length)
     : 0;
-  const avgFat = dailyFood.length > 0
-    ? Math.round(dailyFood.reduce((s, d) => s + d.fat, 0) / dailyFood.length)
+  const avgFat = completedFood.length > 0
+    ? Math.round(completedFood.reduce((s, d) => s + d.fat, 0) / completedFood.length)
     : 0;
 
-  // Calorie trend
+  // Calorie trend — exclude today
   const calorieTrend = useMemo(() => {
-    if (dailyFood.length < 2) return 0;
-    const sorted = [...dailyFood].sort((a, b) => a.date.localeCompare(b.date));
+    const completed = dailyFood.filter(d => d.date < today);
+    if (completed.length < 2) return 0;
+    const sorted = [...completed].sort((a, b) => a.date.localeCompare(b.date));
     const recentDays = sorted.slice(-7);
     const prevDays = sorted.slice(-14, -7);
     if (prevDays.length === 0 || recentDays.length === 0) return 0;
@@ -85,7 +89,7 @@ export default function AnalyticsPage() {
     const prevAvg = prevDays.reduce((s, d) => s + d.calories, 0) / prevDays.length;
     if (prevAvg === 0) return 0;
     return Math.round(((recentAvg - prevAvg) / prevAvg) * 100);
-  }, [dailyFood]);
+  }, [dailyFood, today]);
 
   // Filtered exercises for progression
   const [showAllExercises, setShowAllExercises] = useState(false);
