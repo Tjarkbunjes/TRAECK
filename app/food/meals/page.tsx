@@ -36,6 +36,7 @@ export default function MealsPage() {
   const [searchResults, setSearchResults] = useState<FoodProduct[]>([]);
   const [searching, setSearching] = useState(false);
   const [recentFoods, setRecentFoods] = useState<FoodProduct[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<FoodProduct | null>(null);
   const [newItem, setNewItem] = useState<MealTemplateItem>({
     food_name: '', serving_grams: 100, calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, saturated_fat: 0,
   });
@@ -171,6 +172,7 @@ export default function MealsPage() {
   }
 
   function selectSearchResult(p: FoodProduct) {
+    setSelectedProduct(p);
     setNewItem({
       food_name: p.name,
       serving_grams: 100,
@@ -187,7 +189,21 @@ export default function MealsPage() {
   }
 
   function updateNewItemServing(grams: number) {
-    setNewItem(prev => ({ ...prev, serving_grams: grams }));
+    if (selectedProduct) {
+      const f = grams / 100;
+      setNewItem(prev => ({
+        ...prev,
+        serving_grams: grams,
+        calories: Math.round(selectedProduct.calories_per_100g * f),
+        protein: Math.round(selectedProduct.protein_per_100g * f * 10) / 10,
+        carbs: Math.round(selectedProduct.carbs_per_100g * f * 10) / 10,
+        fat: Math.round(selectedProduct.fat_per_100g * f * 10) / 10,
+        sugar: Math.round((selectedProduct.sugar_per_100g || 0) * f * 10) / 10,
+        saturated_fat: Math.round((selectedProduct.saturated_fat_per_100g || 0) * f * 10) / 10,
+      }));
+    } else {
+      setNewItem(prev => ({ ...prev, serving_grams: grams }));
+    }
   }
 
   function addItemToMeal() {
@@ -197,6 +213,7 @@ export default function MealsPage() {
     }
     setItems(prev => [...prev, { ...newItem }]);
     setNewItem({ food_name: '', serving_grams: 100, calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, saturated_fat: 0 });
+    setSelectedProduct(null);
     setShowAddItem(false);
   }
 
