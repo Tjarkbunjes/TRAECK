@@ -375,7 +375,7 @@ export default function MealsPage() {
                 add food item
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-h-[85vh] max-w-[calc(100vw-2rem)] overflow-y-auto overflow-x-hidden">
               <DialogHeader>
                 <DialogTitle>add food item</DialogTitle>
               </DialogHeader>
