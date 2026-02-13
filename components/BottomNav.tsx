@@ -19,7 +19,7 @@ export function BottomNav() {
   if (pathname?.startsWith('/auth')) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#292929] bg-[#0F0F0F]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0F0F0F]/60">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#292929] bg-[#0F0F0F]/95 backdrop-blur supports-[backdrop-filter]:bg-[#0F0F0F]/60" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <div className="mx-auto flex h-16 max-w-md items-center justify-around px-2">
         {navItems.map((item) => {
           const isActive = item.href === '/'

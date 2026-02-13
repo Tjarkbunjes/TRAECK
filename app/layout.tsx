@@ -34,6 +34,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
   themeColor: "#0A0A0A",
 };
 
@@ -47,7 +48,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased font-sans`}
       >
-        <main className="pb-20 min-h-screen">
+        <main className="pb-[calc(5rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] min-h-screen">
           {children}
           <div className="flex justify-center py-6">
             <span className="text-sm text-muted-foreground/60 tracking-[0.15em]">TR&AElig;CK</span>
