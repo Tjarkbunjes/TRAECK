@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Trash2, Save, Search, Pencil, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Search, Pencil, UtensilsCrossed, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import type { MealTemplate, MealTemplateItem, MealType, FoodProduct } from '@/lib/types';
@@ -35,12 +35,16 @@ export default function MealsPage() {
   const [itemSearch, setItemSearch] = useState('');
   const [searchResults, setSearchResults] = useState<FoodProduct[]>([]);
   const [searching, setSearching] = useState(false);
+  const [recentFoods, setRecentFoods] = useState<FoodProduct[]>([]);
   const [newItem, setNewItem] = useState<MealTemplateItem>({
     food_name: '', serving_grams: 100, calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, saturated_fat: 0,
   });
 
   useEffect(() => {
-    if (user) loadMeals();
+    if (user) {
+      loadMeals();
+      loadRecentFoods();
+    }
   }, [user]);
 
   async function loadMeals() {
@@ -52,6 +56,36 @@ export default function MealsPage() {
       .order('created_at', { ascending: false });
     if (data) setMeals(data as MealTemplate[]);
     setLoading(false);
+  }
+
+  async function loadRecentFoods() {
+    if (!user) return;
+    const { data } = await supabase
+      .from('food_entries')
+      .select('food_name, barcode, calories, protein, carbs, fat, sugar, saturated_fat, serving_grams')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(500);
+    if (data) {
+      const seen = new Set<string>();
+      const unique: FoodProduct[] = [];
+      for (const e of data) {
+        if (!seen.has(e.food_name)) {
+          seen.add(e.food_name);
+          unique.push({
+            name: e.food_name,
+            barcode: e.barcode || undefined,
+            calories_per_100g: e.serving_grams > 0 ? (e.calories / e.serving_grams) * 100 : 0,
+            protein_per_100g: e.serving_grams > 0 ? (e.protein / e.serving_grams) * 100 : 0,
+            carbs_per_100g: e.serving_grams > 0 ? (e.carbs / e.serving_grams) * 100 : 0,
+            fat_per_100g: e.serving_grams > 0 ? (e.fat / e.serving_grams) * 100 : 0,
+            sugar_per_100g: e.serving_grams > 0 ? ((e.sugar || 0) / e.serving_grams) * 100 : 0,
+            saturated_fat_per_100g: e.serving_grams > 0 ? ((e.saturated_fat || 0) / e.serving_grams) * 100 : 0,
+          });
+        }
+      }
+      setRecentFoods(unique);
+    }
   }
 
   function startCreate() {
@@ -372,6 +406,29 @@ export default function MealsPage() {
                       </div>
                     ))}
                   </div>
+                )}
+
+                {/* Recent foods */}
+                {recentFoods.length > 0 && !searchResults.length && (
+                  <>
+                    <div>
+                      <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-1 mb-2">
+                        <Clock className="h-3 w-3" /> recent
+                      </h3>
+                      <div className="space-y-1 max-h-36 overflow-y-auto">
+                        {recentFoods.slice(0, 20).map((p, i) => (
+                          <div
+                            key={i}
+                            className="cursor-pointer rounded-md p-2 hover:bg-accent/50 transition-colors text-sm"
+                            onClick={() => selectSearchResult(p)}
+                          >
+                            <p className="font-medium truncate">{p.name}</p>
+                            <p className="text-xs text-muted-foreground">{Math.round(p.calories_per_100g)} kcal/100g</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 <Separator />
