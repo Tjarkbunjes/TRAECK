@@ -375,11 +375,11 @@ export default function MealsPage() {
                 add food item
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[85vh] overflow-y-auto p-4">
+            <DialogContent className="max-h-[85vh] overflow-y-auto overflow-x-hidden p-4">
               <DialogHeader>
                 <DialogTitle>add food item</DialogTitle>
               </DialogHeader>
-              <div className="space-y-3">
+              <div className="space-y-3 min-w-0">
                 {/* Search */}
                 <div className="flex gap-2">
                   <Input
@@ -450,30 +450,30 @@ export default function MealsPage() {
                     onChange={(e) => updateNewItemServing(Number(e.target.value))}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1 min-w-0">
                     <Label className="text-xs">Calories</Label>
-                    <Input type="number" value={newItem.calories} onChange={(e) => setNewItem(prev => ({ ...prev, calories: Number(e.target.value) }))} />
+                    <Input type="number" className="w-full" value={newItem.calories} onChange={(e) => setNewItem(prev => ({ ...prev, calories: Number(e.target.value) }))} />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <Label className="text-xs">Protein (g)</Label>
-                    <Input type="number" value={newItem.protein} onChange={(e) => setNewItem(prev => ({ ...prev, protein: Number(e.target.value) }))} />
+                    <Input type="number" className="w-full" value={newItem.protein} onChange={(e) => setNewItem(prev => ({ ...prev, protein: Number(e.target.value) }))} />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <Label className="text-xs">Carbs (g)</Label>
-                    <Input type="number" value={newItem.carbs} onChange={(e) => setNewItem(prev => ({ ...prev, carbs: Number(e.target.value) }))} />
+                    <Input type="number" className="w-full" value={newItem.carbs} onChange={(e) => setNewItem(prev => ({ ...prev, carbs: Number(e.target.value) }))} />
                   </div>
-                  <div className="space-y-1 pl-3 border-l-2 border-amber-500/30">
+                  <div className="space-y-1 min-w-0 pl-2 border-l-2 border-amber-500/30">
                     <Label className="text-xs text-muted-foreground">of which sugar (g)</Label>
-                    <Input type="number" value={newItem.sugar || 0} onChange={(e) => setNewItem(prev => ({ ...prev, sugar: Number(e.target.value) }))} />
+                    <Input type="number" className="w-full" value={newItem.sugar || 0} onChange={(e) => setNewItem(prev => ({ ...prev, sugar: Number(e.target.value) }))} />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0">
                     <Label className="text-xs">Fat (g)</Label>
-                    <Input type="number" value={newItem.fat} onChange={(e) => setNewItem(prev => ({ ...prev, fat: Number(e.target.value) }))} />
+                    <Input type="number" className="w-full" value={newItem.fat} onChange={(e) => setNewItem(prev => ({ ...prev, fat: Number(e.target.value) }))} />
                   </div>
-                  <div className="space-y-1 pl-3 border-l-2 border-rose-500/30">
+                  <div className="space-y-1 min-w-0 pl-2 border-l-2 border-rose-500/30">
                     <Label className="text-xs text-muted-foreground">of which saturated (g)</Label>
-                    <Input type="number" value={newItem.saturated_fat || 0} onChange={(e) => setNewItem(prev => ({ ...prev, saturated_fat: Number(e.target.value) }))} />
+                    <Input type="number" className="w-full" value={newItem.saturated_fat || 0} onChange={(e) => setNewItem(prev => ({ ...prev, saturated_fat: Number(e.target.value) }))} />
                   </div>
                 </div>
 
