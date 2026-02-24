@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { format, startOfWeek, addDays, subWeeks, isSameWeek } from 'date-fns';
+import { format, startOfWeek, addDays, subDays, subWeeks, isSameWeek } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile, useGarminData } from '@/lib/hooks';
 import { MacroRings } from '@/components/MacroRings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight, NotebookPen } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { JournalDialog } from '@/components/JournalDialog';
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth();
@@ -30,6 +31,8 @@ export default function HomePage() {
   const [weightDialogOpen, setWeightDialogOpen] = useState(false);
   const [quickWeight, setQuickWeight] = useState('');
   const [savingWeight, setSavingWeight] = useState(false);
+  const [journalOpen, setJournalOpen] = useState(false);
+  const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -208,6 +211,20 @@ export default function HomePage() {
           weight
         </Button>
       </div>
+
+      {/* Journal */}
+      <button
+        onClick={() => setJournalOpen(true)}
+        className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-[#292929] bg-[#0F0F0F] hover:border-[#3A3A3A] transition-colors"
+      >
+        <div className="flex items-center gap-2.5">
+          <NotebookPen className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm">journal</span>
+        </div>
+        <span className="text-[10px] text-muted-foreground">yesterday</span>
+      </button>
+
+      <JournalDialog open={journalOpen} onClose={() => setJournalOpen(false)} initialDate={yesterday} />
 
       {/* Weight Quick Add Dialog */}
       <Dialog open={weightDialogOpen} onOpenChange={setWeightDialogOpen}>

@@ -194,6 +194,21 @@ export interface GarminHealthEntry {
   fetched_at: string;
 }
 
+export interface JournalEntry {
+  id: string;
+  user_id: string;
+  date: string;
+  hours_slept: number | null;
+  sleep_quality: number | null;
+  sweets: boolean | null;
+  last_meal_time: string | null;
+  alcohol: boolean | null;
+  alcohol_amount: number | null;
+  sex: boolean | null;
+  magnesium_zinc: boolean | null;
+  created_at: string;
+}
+
 export const MUSCLE_GROUP_LABELS: Record<string, string> = {
   chest: 'Chest',
   back: 'Back',
