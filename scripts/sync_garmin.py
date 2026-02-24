@@ -187,6 +187,12 @@ def sync_date(client: Garmin, d: date):
     # Remove None values to avoid overwriting existing data with nulls
     row = {k: v for k, v in row.items() if v is not None or k in ("user_id", "date")}
 
+    # Cast floats to int for integer columns
+    int_cols = {"steps", "step_goal", "resting_hr", "avg_hr", "max_hr",
+                "sleep_score", "sleep_seconds", "body_battery_high",
+                "stress_avg", "calories_active", "distance_meters"}
+    row = {k: int(v) if k in int_cols and isinstance(v, float) else v for k, v in row.items()}
+
     upsert_to_supabase(row)
 
 
