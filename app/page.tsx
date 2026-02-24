@@ -181,40 +181,11 @@ export default function HomePage() {
 
 
       {/* Garmin Today */}
-      {todayGarmin && (
+      {todayGarmin?.resting_hr !== null && todayGarmin !== null && (
         <Card>
-          <CardContent className="p-3">
-            <div className="grid grid-cols-4 divide-x divide-[#292929] text-center">
-              {todayGarmin.steps !== null && (
-                <div className="px-2">
-                  <p className="text-base font-bold font-mono">{(todayGarmin.steps).toLocaleString()}</p>
-                  <p className="text-[10px] text-muted-foreground">steps</p>
-                  {todayGarmin.step_goal && (
-                    <div className="mt-1 h-1 rounded-full bg-[#1E1E1E] overflow-hidden">
-                      <div className="h-full rounded-full bg-[#2DCAEF]" style={{ width: `${Math.min((todayGarmin.steps / todayGarmin.step_goal) * 100, 100)}%` }} />
-                    </div>
-                  )}
-                </div>
-              )}
-              {todayGarmin.resting_hr !== null && (
-                <div className="px-2">
-                  <p className="text-base font-bold font-mono">{todayGarmin.resting_hr}</p>
-                  <p className="text-[10px] text-muted-foreground">resting hr</p>
-                </div>
-              )}
-              {todayGarmin.sleep_score !== null && (
-                <div className="px-2">
-                  <p className="text-base font-bold font-mono">{todayGarmin.sleep_score}</p>
-                  <p className="text-[10px] text-muted-foreground">sleep</p>
-                </div>
-              )}
-              {todayGarmin.body_battery_high !== null && (
-                <div className="px-2">
-                  <p className="text-base font-bold font-mono">{todayGarmin.body_battery_high}</p>
-                  <p className="text-[10px] text-muted-foreground">battery</p>
-                </div>
-              )}
-            </div>
+          <CardContent className="p-3 text-center">
+            <p className="text-2xl font-bold font-mono">{todayGarmin.resting_hr}</p>
+            <p className="text-xs text-muted-foreground">resting heart rate (bpm)</p>
           </CardContent>
         </Card>
       )}
