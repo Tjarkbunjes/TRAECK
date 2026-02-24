@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format, startOfWeek, addDays, subDays, subWeeks, isSameWeek } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile, useGarminData } from '@/lib/hooks';
 import { MacroRings } from '@/components/MacroRings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight, NotebookPen } from 'lucide-react';
+import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight, NotebookPen, Send } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { JournalDialog } from '@/components/JournalDialog';
@@ -32,6 +34,8 @@ export default function HomePage() {
   const [quickWeight, setQuickWeight] = useState('');
   const [savingWeight, setSavingWeight] = useState(false);
   const [journalOpen, setJournalOpen] = useState(false);
+  const [devNote, setDevNote] = useState('');
+  const [sendingNote, setSendingNote] = useState(false);
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
   useEffect(() => {
@@ -123,6 +127,22 @@ export default function HomePage() {
 
   const latestWeight = weightEntries.length > 0 ? weightEntries[weightEntries.length - 1] : null;
   const lastWorkout = workouts.length > 0 ? workouts[0] : null;
+
+  async function handleSendDevNote() {
+    if (!user || !devNote.trim()) return;
+    setSendingNote(true);
+    const { error } = await supabase.from('dev_notes').insert({
+      user_id: user.id,
+      note: devNote.trim(),
+    });
+    if (error) {
+      toast.error('failed to send note.');
+    } else {
+      toast.success('note sent — thank you!');
+      setDevNote('');
+    }
+    setSendingNote(false);
+  }
 
   async function handleQuickWeight() {
     if (!user || !quickWeight) return;
@@ -358,6 +378,29 @@ export default function HomePage() {
           </Card>
         );
       })()}
+
+      {/* Developer Notes */}
+      <div className="space-y-2 pt-4">
+        <p className="text-xs font-semibold text-muted-foreground">developer notes</p>
+        <div className="flex gap-2">
+          <Textarea
+            placeholder="feedback, bugs, feature requests..."
+            value={devNote}
+            onChange={(e) => setDevNote(e.target.value)}
+            rows={2}
+            className="resize-none text-sm"
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            className="shrink-0 self-end h-9 w-9"
+            onClick={handleSendDevNote}
+            disabled={!devNote.trim() || sendingNote}
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
