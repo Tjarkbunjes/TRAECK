@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { JournalDialog } from '@/components/JournalDialog';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function HomePage() {
   const { user, loading: authLoading } = useAuth();
@@ -203,15 +204,50 @@ export default function HomePage() {
       )}
 
 
-      {/* Garmin Today */}
-      {todayGarmin?.resting_hr !== null && todayGarmin !== null && (
-        <Card>
-          <CardContent className="p-3 text-center">
-            <p className="text-2xl font-bold font-mono">{todayGarmin.resting_hr}</p>
-            <p className="text-xs text-muted-foreground">resting heart rate (bpm)</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Garmin Intraday HR */}
+      {todayGarmin?.hr_values && todayGarmin.hr_values.length > 0 && (() => {
+        const chartData = todayGarmin.hr_values!.map(({ t, hr }) => ({
+          time: new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+          hr,
+        }));
+        return (
+          <Card>
+            <CardContent className="pt-4 space-y-1">
+              <p className="text-xs text-muted-foreground">today&apos;s heart rate</p>
+              <ResponsiveContainer width="100%" height={130}>
+                <LineChart data={chartData} margin={{ top: 4, right: 0, left: -24, bottom: 0 }}>
+                  <XAxis
+                    dataKey="time"
+                    tick={{ fill: '#d4d4d4', fontSize: 9 }}
+                    tickLine={false}
+                    axisLine={false}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={{ fill: '#d4d4d4', fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    domain={['auto', 'auto']}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0F0F0F', border: '1px solid #292929', borderRadius: 6, fontSize: 12 }}
+                    labelStyle={{ color: '#d4d4d4' }}
+                    formatter={(v: number | undefined) => [v ?? '–', 'bpm']}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="hr"
+                    stroke="#2DCAEF"
+                    strokeWidth={1.5}
+                    dot={false}
+                    activeDot={{ r: 2, fill: '#2DCAEF' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Quick Add */}
       <div className="grid grid-cols-3 gap-2">
