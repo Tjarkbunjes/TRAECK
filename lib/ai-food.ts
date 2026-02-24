@@ -1,32 +1,28 @@
 import { supabase } from './supabase';
 import type { AIFoodResult } from './types';
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      // Remove the data:image/...;base64, prefix
+      const base64 = result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export async function analyzeFood(
   imageFile: File,
-  userId: string,
   description?: string,
 ): Promise<AIFoodResult[]> {
-  // 1. Upload image to Supabase Storage
-  const ext = imageFile.name.split('.').pop() || 'jpg';
-  const path = `${userId}/${Date.now()}.${ext}`;
+  const imageBase64 = await fileToBase64(imageFile);
 
-  const { error: uploadError } = await supabase.storage
-    .from('food-images')
-    .upload(path, imageFile, { contentType: imageFile.type, upsert: false });
-
-  if (uploadError) {
-    throw new Error(`Image upload failed: ${uploadError.message}`);
-  }
-
-  const { data: urlData } = supabase.storage
-    .from('food-images')
-    .getPublicUrl(path);
-
-  const imageUrl = urlData.publicUrl;
-
-  // 2. Call Edge Function
   const { data, error } = await supabase.functions.invoke('analyze-food', {
-    body: { imageUrl, description },
+    body: { imageBase64, mimeType: imageFile.type, description },
   });
 
   if (error) {
@@ -37,7 +33,6 @@ export async function analyzeFood(
     throw new Error('Invalid response from AI');
   }
 
-  // 3. Validate and return results
   return data.foods.map((f: Record<string, unknown>) => ({
     name: String(f.name || 'Unknown'),
     serving_grams: Number(f.serving_grams) || 100,

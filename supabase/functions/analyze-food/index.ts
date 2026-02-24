@@ -2,6 +2,20 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
+
+function jsonResponse(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 const SYSTEM_PROMPT = `You are a nutrition analysis assistant. Analyze the food in the provided image and estimate the nutritional values.
 
 Rules:
@@ -30,60 +44,21 @@ Respond ONLY with valid JSON in this exact format:
 }`;
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers":
-          "authorization, x-client-info, apikey, content-type",
-      },
-    });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
     if (!GEMINI_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "GEMINI_API_KEY not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json" } },
-      );
+      return jsonResponse({ error: "GEMINI_API_KEY not configured" }, 500);
     }
 
-    // Verify auth
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        { status: 401, headers: { "Content-Type": "application/json" } },
-      );
+    const { imageBase64, mimeType, description } = await req.json();
+
+    if (!imageBase64) {
+      return jsonResponse({ error: "imageBase64 is required" }, 400);
     }
 
-    const { imageUrl, description } = await req.json();
-
-    if (!imageUrl) {
-      return new Response(
-        JSON.stringify({ error: "imageUrl is required" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
-    }
-
-    // Fetch the image and convert to base64
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      return new Response(
-        JSON.stringify({ error: "Failed to fetch image" }),
-        { status: 400, headers: { "Content-Type": "application/json" } },
-      );
-    }
-
-    const imageBytes = await imageResponse.arrayBuffer();
-    const base64Image = btoa(
-      String.fromCharCode(...new Uint8Array(imageBytes)),
-    );
-    const mimeType = imageResponse.headers.get("content-type") || "image/jpeg";
-
-    // Build Gemini request
     const userMessage = description
       ? `Analyze this food image. User description: "${description}"`
       : "Analyze this food image and estimate nutritional values.";
@@ -103,8 +78,8 @@ Deno.serve(async (req) => {
             parts: [
               {
                 inlineData: {
-                  mimeType,
-                  data: base64Image,
+                  mimeType: mimeType || "image/jpeg",
+                  data: imageBase64,
                 },
               },
               { text: userMessage },
@@ -121,38 +96,24 @@ Deno.serve(async (req) => {
     if (!geminiResponse.ok) {
       const errText = await geminiResponse.text();
       console.error("Gemini API error:", errText);
-      return new Response(
-        JSON.stringify({ error: "AI analysis failed. Please try again." }),
-        { status: 502, headers: { "Content-Type": "application/json" } },
+      return jsonResponse(
+        { error: "AI analysis failed. Please try again." },
+        502,
       );
     }
 
     const geminiData = await geminiResponse.json();
 
-    // Extract the text response
     const textContent =
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!textContent) {
-      return new Response(
-        JSON.stringify({ error: "No response from AI" }),
-        { status: 502, headers: { "Content-Type": "application/json" } },
-      );
+      return jsonResponse({ error: "No response from AI" }, 502);
     }
 
-    // Parse the JSON response
     const parsed = JSON.parse(textContent);
-
-    return new Response(JSON.stringify(parsed), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
+    return jsonResponse(parsed);
   } catch (err) {
     console.error("Edge function error:", err);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 });

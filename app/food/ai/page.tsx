@@ -62,7 +62,7 @@ function AIFoodPageInner() {
 
     setState('analyzing');
     try {
-      const foods = await analyzeFood(imageFile, user.id, description || undefined);
+      const foods = await analyzeFood(imageFile, description || undefined);
       setResults(foods.map(f => ({ ...f, mealType: 'lunch' as MealType })));
       setState('review');
       toast.success(`${foods.length} item${foods.length !== 1 ? 's' : ''} detected.`);
