@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
-import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship, DailyFoodAggregate } from './types';
+import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship, DailyFoodAggregate, GarminHealthEntry } from './types';
 import { format } from 'date-fns';
 
 export function useProfile() {
@@ -424,4 +424,33 @@ export function useFriendCaloriesWeek(friendId: string | null) {
   }, [friendId]);
 
   return { days, loading };
+}
+
+export function useGarminData(days: number = 30) {
+  const [entries, setEntries] = useState<GarminHealthEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const start = new Date();
+      start.setDate(start.getDate() - days);
+      const startStr = format(start, 'yyyy-MM-dd');
+
+      const { data } = await supabase
+        .from('garmin_health_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('date', startStr)
+        .order('date', { ascending: true });
+
+      setEntries(data || []);
+      setLoading(false);
+    }
+    load();
+  }, [days]);
+
+  return { entries, loading };
 }

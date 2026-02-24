@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { format, startOfWeek, addDays, subWeeks, isSameWeek } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile } from '@/lib/hooks';
+import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile, useGarminData } from '@/lib/hooks';
 import { MacroRings } from '@/components/MacroRings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +21,8 @@ export default function HomePage() {
   const { entries: todayEntries } = useFoodEntries(today);
   const { entries: weightEntries } = useWeightEntries(30);
   const { workouts } = useWorkouts();
+  const { entries: garminEntries } = useGarminData(1);
+  const todayGarmin = garminEntries.find(e => e.date === today) ?? null;
   const [weekOffset, setWeekOffset] = useState(0);
   const [weeklyFood, setWeeklyFood] = useState<Map<number, number>>(new Map());
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Map<number, string>>(new Map());
@@ -177,6 +179,45 @@ export default function HomePage() {
         </Card>
       )}
 
+
+      {/* Garmin Today */}
+      {todayGarmin && (
+        <Card>
+          <CardContent className="p-3">
+            <div className="grid grid-cols-4 divide-x divide-[#292929] text-center">
+              {todayGarmin.steps !== null && (
+                <div className="px-2">
+                  <p className="text-base font-bold font-mono">{(todayGarmin.steps).toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground">steps</p>
+                  {todayGarmin.step_goal && (
+                    <div className="mt-1 h-1 rounded-full bg-[#1E1E1E] overflow-hidden">
+                      <div className="h-full rounded-full bg-[#2DCAEF]" style={{ width: `${Math.min((todayGarmin.steps / todayGarmin.step_goal) * 100, 100)}%` }} />
+                    </div>
+                  )}
+                </div>
+              )}
+              {todayGarmin.resting_hr !== null && (
+                <div className="px-2">
+                  <p className="text-base font-bold font-mono">{todayGarmin.resting_hr}</p>
+                  <p className="text-[10px] text-muted-foreground">resting hr</p>
+                </div>
+              )}
+              {todayGarmin.sleep_score !== null && (
+                <div className="px-2">
+                  <p className="text-base font-bold font-mono">{todayGarmin.sleep_score}</p>
+                  <p className="text-[10px] text-muted-foreground">sleep</p>
+                </div>
+              )}
+              {todayGarmin.body_battery_high !== null && (
+                <div className="px-2">
+                  <p className="text-base font-bold font-mono">{todayGarmin.body_battery_high}</p>
+                  <p className="text-[10px] text-muted-foreground">battery</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Add */}
       <div className="grid grid-cols-3 gap-2">

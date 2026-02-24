@@ -175,6 +175,24 @@ export interface DailyFoodAggregate {
   fat: number;
 }
 
+export interface GarminHealthEntry {
+  id: string;
+  user_id: string;
+  date: string;
+  steps: number | null;
+  step_goal: number | null;
+  resting_hr: number | null;
+  avg_hr: number | null;
+  max_hr: number | null;
+  sleep_score: number | null;
+  sleep_seconds: number | null;
+  body_battery_high: number | null;
+  stress_avg: number | null;
+  calories_active: number | null;
+  distance_meters: number | null;
+  fetched_at: string;
+}
+
 export const MUSCLE_GROUP_LABELS: Record<string, string> = {
   chest: 'Chest',
   back: 'Back',

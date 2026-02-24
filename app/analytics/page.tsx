@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { useAuth, useWeightEntries, useProfile, useAnalyticsWorkouts, useAnalyticsFood } from '@/lib/hooks';
+import { useAuth, useWeightEntries, useProfile, useAnalyticsWorkouts, useAnalyticsFood, useGarminData } from '@/lib/hooks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -12,6 +12,7 @@ const MuscleRadarChart = dynamic(() => import('@/components/MuscleRadarChart').t
 const ExerciseProgressionChart = dynamic(() => import('@/components/ExerciseProgressionChart').then(m => ({ default: m.ExerciseProgressionChart })), { ssr: false });
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingDown, TrendingUp, Minus, Loader2 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer, Cell } from 'recharts';
 
 type TimeRange = '7' | '30' | '90' | '365';
 type Category = string; // 'all' or a workout name
@@ -25,6 +26,7 @@ export default function AnalyticsPage() {
   const { entries: weightEntries, loading: weightLoading } = useWeightEntries(days);
   const { workouts, sets, loading: workoutLoading } = useAnalyticsWorkouts(days);
   const { dailyFood, loading: foodLoading } = useAnalyticsFood(days);
+  const { entries: garminEntries, loading: garminLoading } = useGarminData(days);
 
   const [radarMode, setRadarMode] = useState<'sets' | 'reps'>('sets');
   const [category, setCategory] = useState<Category>('all');
@@ -127,7 +129,7 @@ export default function AnalyticsPage() {
       .map(([name]) => name);
   }, [sets, category, workouts]);
 
-  const isLoading = weightLoading || workoutLoading || foodLoading;
+  const isLoading = weightLoading || workoutLoading || foodLoading || garminLoading;
 
   if (!user) {
     return (
@@ -236,6 +238,82 @@ export default function AnalyticsPage() {
             )}
           </section>
 
+          {/* ── Garmin Section ── */}
+          {garminEntries.length > 0 && (() => {
+            const withSteps = garminEntries.filter(e => e.steps !== null);
+            const withHr = garminEntries.filter(e => e.resting_hr !== null);
+            const withSleep = garminEntries.filter(e => e.sleep_score !== null);
+            const withBb = garminEntries.filter(e => e.body_battery_high !== null);
+
+            const avgSteps = withSteps.length > 0
+              ? Math.round(withSteps.reduce((s, e) => s + (e.steps ?? 0), 0) / withSteps.length)
+              : null;
+            const avgHr = withHr.length > 0
+              ? Math.round(withHr.reduce((s, e) => s + (e.resting_hr ?? 0), 0) / withHr.length)
+              : null;
+            const avgSleep = withSleep.length > 0
+              ? Math.round(withSleep.reduce((s, e) => s + (e.sleep_score ?? 0), 0) / withSleep.length)
+              : null;
+            const avgBb = withBb.length > 0
+              ? Math.round(withBb.reduce((s, e) => s + (e.body_battery_high ?? 0), 0) / withBb.length)
+              : null;
+
+            const stepChartData = withSteps.map(e => ({
+              date: e.date.slice(5),
+              steps: e.steps ?? 0,
+              goal: e.step_goal ?? 10000,
+            }));
+
+            return (
+              <section className="space-y-2">
+                <h2 className="text-sm font-medium text-muted-foreground">garmin health</h2>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {avgSteps !== null && (
+                    <Card>
+                      <CardContent className="p-3 text-center">
+                        <p className="text-2xl font-bold font-mono">{avgSteps.toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">avg steps</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {avgHr !== null && (
+                    <Card>
+                      <CardContent className="p-3 text-center">
+                        <p className="text-2xl font-bold font-mono">{avgHr}</p>
+                        <p className="text-xs text-muted-foreground">avg resting HR</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {avgSleep !== null && (
+                    <Card>
+                      <CardContent className="p-3 text-center">
+                        <p className="text-2xl font-bold font-mono">{avgSleep}</p>
+                        <p className="text-xs text-muted-foreground">avg sleep score</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {avgBb !== null && (
+                    <Card>
+                      <CardContent className="p-3 text-center">
+                        <p className="text-2xl font-bold font-mono">{avgBb}</p>
+                        <p className="text-xs text-muted-foreground">avg body battery</p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+
+                {stepChartData.length > 1 && (
+                  <Card>
+                    <CardContent className="pt-4">
+                      <GarminStepsChart data={stepChartData} />
+                    </CardContent>
+                  </Card>
+                )}
+              </section>
+            );
+          })()}
+
           {/* ── Strength Radar Section ── */}
           <section className="space-y-2">
             <h2 className="text-sm font-medium text-muted-foreground">strength</h2>
@@ -319,6 +397,47 @@ export default function AnalyticsPage() {
           </section>
         </>
       )}
+    </div>
+  );
+}
+
+function GarminStepsChart({ data }: { data: { date: string; steps: number; goal: number }[] }) {
+  const maxGoal = data[0]?.goal ?? 10000;
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground mb-2">daily steps</p>
+      <ResponsiveContainer width="100%" height={140}>
+        <BarChart data={data} margin={{ top: 4, right: 0, left: -24, bottom: 0 }}>
+          <XAxis
+            dataKey="date"
+            tick={{ fill: '#d4d4d4', fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+            interval="preserveStartEnd"
+          />
+          <YAxis
+            tick={{ fill: '#d4d4d4', fontSize: 10 }}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(v) => v >= 1000 ? `${v / 1000}k` : v}
+          />
+          <Tooltip
+            contentStyle={{ backgroundColor: '#0F0F0F', border: '1px solid #292929', borderRadius: 6, fontSize: 12 }}
+            labelStyle={{ color: '#d4d4d4' }}
+            formatter={(v: number) => [v.toLocaleString(), 'steps']}
+          />
+          <ReferenceLine y={maxGoal} stroke="#2626FF" strokeDasharray="4 3" strokeWidth={1} />
+          <Bar dataKey="steps" radius={[2, 2, 0, 0]}>
+            {data.map((entry, i) => (
+              <Cell key={i} fill={(entry.steps ?? 0) >= entry.goal ? '#2DCAEF' : '#2626FF'} fillOpacity={(entry.steps ?? 0) >= entry.goal ? 1 : 0.5} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+      <div className="flex gap-3 mt-1 justify-end">
+        <span className="text-xs text-muted-foreground flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#2DCAEF]" /> goal met</span>
+        <span className="text-xs text-muted-foreground flex items-center gap-1"><span className="inline-block w-2 h-2 rounded-sm bg-[#2626FF] opacity-50" /> below goal</span>
+      </div>
     </div>
   );
 }
