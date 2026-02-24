@@ -54,6 +54,7 @@ export function JournalDialog({ open, onClose, initialDate }: Props) {
       );
     }
     setSaving(false);
+    onClose();
   }
 
   return (
