@@ -424,7 +424,7 @@ function GarminStepsChart({ data }: { data: { date: string; steps: number; goal:
           <Tooltip
             contentStyle={{ backgroundColor: '#0F0F0F', border: '1px solid #292929', borderRadius: 6, fontSize: 12 }}
             labelStyle={{ color: '#d4d4d4' }}
-            formatter={(v: number) => [v.toLocaleString(), 'steps']}
+            formatter={(v: number | undefined) => [(v ?? 0).toLocaleString(), 'steps']}
           />
           <ReferenceLine y={maxGoal} stroke="#2626FF" strokeDasharray="4 3" strokeWidth={1} />
           <Bar dataKey="steps" radius={[2, 2, 0, 0]}>
