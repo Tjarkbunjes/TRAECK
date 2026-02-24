@@ -79,10 +79,17 @@ def extract_steps(data) -> dict:
 def extract_heart_rate(data) -> dict:
     if not data:
         return {}
+    raw_values = data.get("heartRateValues") or []
+    cleaned = [
+        {"t": int(v[0]), "hr": int(v[1])}
+        for v in raw_values
+        if isinstance(v, list) and len(v) == 2 and v[1] is not None and v[1] > 0
+    ]
     return {
         "resting_hr": data.get("restingHeartRate"),
-        "avg_hr": data.get("averageHeartRate") or data.get("heartRateValues") and None,
+        "avg_hr": data.get("averageHeartRate"),
         "max_hr": data.get("maxHeartRate"),
+        "hr_values": cleaned if cleaned else None,
     }
 
 
@@ -187,11 +194,13 @@ def sync_date(client: Garmin, d: date):
     # Remove None values to avoid overwriting existing data with nulls
     row = {k: v for k, v in row.items() if v is not None or k in ("user_id", "date")}
 
-    # Cast floats to int for integer columns
+    # Cast floats to int for integer columns (exclude jsonb fields)
     int_cols = {"steps", "step_goal", "resting_hr", "avg_hr", "max_hr",
                 "sleep_score", "sleep_seconds", "body_battery_high",
                 "stress_avg", "calories_active", "distance_meters"}
     row = {k: int(v) if k in int_cols and isinstance(v, float) else v for k, v in row.items()}
+    # hr_values is a list → send as-is (Supabase jsonb accepts Python list)
+    # already excluded from int_cols above
 
     upsert_to_supabase(row)
 

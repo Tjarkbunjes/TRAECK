@@ -190,6 +190,7 @@ export interface GarminHealthEntry {
   stress_avg: number | null;
   calories_active: number | null;
   distance_meters: number | null;
+  hr_values: Array<{ t: number; hr: number }> | null;
   fetched_at: string;
 }
 

@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth, useWeightEntries, useProfile, useAnalyticsWorkouts, useAnalyticsFood, useGarminData } from '@/lib/hooks';
+import type { GarminHealthEntry } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -284,6 +285,8 @@ export default function AnalyticsPage() {
                     </CardContent>
                   </Card>
                 )}
+
+                <GarminIntradaySection entries={garminEntries} />
               </section>
             );
           })()}
@@ -372,6 +375,68 @@ export default function AnalyticsPage() {
         </>
       )}
     </div>
+  );
+}
+
+function GarminIntradaySection({ entries }: { entries: GarminHealthEntry[] }) {
+  const withIntraday = entries.filter(e => e.hr_values && e.hr_values.length > 0);
+  const [selectedDate, setSelectedDate] = useState(withIntraday[withIntraday.length - 1]?.date ?? '');
+
+  if (withIntraday.length === 0) return null;
+
+  const selectedEntry = withIntraday.find(e => e.date === selectedDate);
+  const chartData = (selectedEntry?.hr_values ?? []).map(({ t, hr }) => ({
+    time: new Date(t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }),
+    hr,
+  }));
+
+  return (
+    <Card>
+      <CardContent className="pt-4 space-y-2">
+        <p className="text-xs text-muted-foreground">intraday heart rate</p>
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {withIntraday.map(e => (
+            <button
+              key={e.date}
+              onClick={() => setSelectedDate(e.date)}
+              className={`px-2 py-1 text-xs rounded-md whitespace-nowrap shrink-0 transition-colors ${selectedDate === e.date ? 'bg-[#2626FF] text-white' : 'bg-[#1E1E1E] text-muted-foreground hover:text-foreground'}`}
+            >
+              {e.date.slice(5)}
+            </button>
+          ))}
+        </div>
+        <ResponsiveContainer width="100%" height={160}>
+          <LineChart data={chartData} margin={{ top: 4, right: 0, left: -24, bottom: 0 }}>
+            <XAxis
+              dataKey="time"
+              tick={{ fill: '#d4d4d4', fontSize: 9 }}
+              tickLine={false}
+              axisLine={false}
+              interval="preserveStartEnd"
+            />
+            <YAxis
+              tick={{ fill: '#d4d4d4', fontSize: 10 }}
+              tickLine={false}
+              axisLine={false}
+              domain={['auto', 'auto']}
+            />
+            <Tooltip
+              contentStyle={{ backgroundColor: '#0F0F0F', border: '1px solid #292929', borderRadius: 6, fontSize: 12 }}
+              labelStyle={{ color: '#d4d4d4' }}
+              formatter={(v: number | undefined) => [v ?? '–', 'bpm']}
+            />
+            <Line
+              type="monotone"
+              dataKey="hr"
+              stroke="#2DCAEF"
+              strokeWidth={1.5}
+              dot={false}
+              activeDot={{ r: 2, fill: '#2DCAEF' }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   );
 }
 
