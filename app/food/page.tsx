@@ -9,7 +9,7 @@ import { FoodEntryCard } from '@/components/FoodEntryCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Plus, ScanBarcode, UtensilsCrossed } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, ScanBarcode, UtensilsCrossed, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
@@ -134,11 +134,17 @@ export default function FoodPage() {
       )}
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <Button asChild className="h-11">
           <Link href={`/food/add?date=${date}`}>
             <Plus className="mr-1.5 h-4 w-4" />
             add
+          </Link>
+        </Button>
+        <Button asChild variant="outline" className="h-11">
+          <Link href={`/food/ai?date=${date}`}>
+            <Sparkles className="mr-1.5 h-4 w-4" />
+            AI
           </Link>
         </Button>
         <Button asChild variant="outline" className="h-11">

@@ -209,6 +209,17 @@ export interface JournalEntry {
   created_at: string;
 }
 
+export interface AIFoodResult {
+  name: string;
+  serving_grams: number;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  sugar: number;
+  saturated_fat: number;
+}
+
 export const MUSCLE_GROUP_LABELS: Record<string, string> = {
   chest: 'Chest',
   back: 'Back',
