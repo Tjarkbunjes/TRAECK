@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
       : "Analyze this food image and estimate nutritional values.";
 
     const geminiUrl =
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
     const geminiResponse = await fetch(geminiUrl, {
       method: "POST",
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       const errText = await geminiResponse.text();
       console.error("Gemini API error:", errText);
       return jsonResponse(
-        { error: "AI analysis failed. Please try again." },
+        { error: `Gemini API error: ${errText.slice(0, 500)}` },
         502,
       );
     }
