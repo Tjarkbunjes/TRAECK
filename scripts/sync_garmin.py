@@ -173,6 +173,11 @@ def sync_date(client: Garmin, d: date):
 
     # Heart rate
     hr_data = safe_get(client.get_heart_rates, date_str)
+    if hr_data:
+        hrv = hr_data.get("heartRateValues") or []
+        valid = [v for v in hrv if isinstance(v, list) and len(v) == 2 and v[1] is not None and v[1] > 0]
+        print(f"  HR keys: {list(hr_data.keys())}")
+        print(f"  heartRateValues total: {len(hrv)}, valid (>0): {len(valid)}, sample: {hrv[:3]}")
     row.update(extract_heart_rate(hr_data))
 
     # Sleep (yesterday's sleep shows on today's date in Garmin)
