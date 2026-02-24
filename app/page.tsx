@@ -269,16 +269,11 @@ export default function HomePage() {
       </div>
 
       {/* Journal */}
-      <button
-        onClick={() => setJournalOpen(true)}
-        className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-[#292929] bg-[#0F0F0F] hover:border-[#3A3A3A] transition-colors"
-      >
-        <div className="flex items-center gap-2.5">
-          <NotebookPen className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">journal</span>
-        </div>
-        <span className="text-[10px] text-muted-foreground">yesterday</span>
-      </button>
+      <Button className="h-14 w-full relative" variant="outline" onClick={() => setJournalOpen(true)}>
+        <NotebookPen className="mr-2 h-5 w-5" />
+        journal
+        <span className="absolute right-3 text-[10px] text-muted-foreground">yesterday</span>
+      </Button>
 
       <JournalDialog open={journalOpen} onClose={() => setJournalOpen(false)} initialDate={yesterday} />
 
