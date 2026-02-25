@@ -49,14 +49,19 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "transactions array is required" }, 400);
     }
 
-    const inputText = transactions
-      .map((t: { id: string; merchant: string; description: string | null }) =>
-        `{ "id": "${t.id}", "merchant": "${t.merchant}", "description": "${t.description || ''}" }`
-      )
-      .join("\n");
+    // Use JSON.stringify for safe escaping of special characters in merchant names
+    const inputText = JSON.stringify(
+      transactions.map((t: { id: string; merchant: string; description: string | null }) => ({
+        id: t.id,
+        merchant: t.merchant,
+        description: t.description || "",
+      }))
+    );
 
     const geminiUrl =
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+    console.log(`Categorizing ${transactions.length} transactions...`);
 
     const geminiResponse = await fetch(geminiUrl, {
       method: "POST",
@@ -81,22 +86,34 @@ Deno.serve(async (req) => {
 
     if (!geminiResponse.ok) {
       const errText = await geminiResponse.text();
-      console.error("Gemini API error:", errText);
+      console.error("Gemini API error:", geminiResponse.status, errText);
       return jsonResponse(
-        { error: `Gemini API error: ${errText.slice(0, 500)}` },
+        { error: `Gemini API error (${geminiResponse.status}): ${errText.slice(0, 300)}` },
         502,
       );
     }
 
     const geminiData = await geminiResponse.json();
+    console.log("Gemini response keys:", Object.keys(geminiData));
 
     const textContent =
       geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!textContent) {
+      console.error("No text in Gemini response:", JSON.stringify(geminiData).slice(0, 500));
       return jsonResponse({ error: "No response from AI" }, 502);
     }
 
-    const results: Array<{ id: string; category: string }> = JSON.parse(textContent);
+    // Parse the response - handle both array and object with array
+    let results: Array<{ id: string; category: string }>;
+    try {
+      const parsed = JSON.parse(textContent);
+      results = Array.isArray(parsed) ? parsed : (parsed.transactions || parsed.results || []);
+    } catch (parseErr) {
+      console.error("Failed to parse Gemini response:", textContent.slice(0, 500));
+      return jsonResponse({ error: "Failed to parse AI response" }, 502);
+    }
+
+    console.log(`Gemini returned ${results.length} categorizations`);
 
     // Update transactions in database using service role
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -115,12 +132,17 @@ Deno.serve(async (req) => {
         .update({ category: r.category })
         .eq("id", r.id);
 
-      if (!error) updated++;
+      if (error) {
+        console.error(`Failed to update ${r.id}:`, error.message);
+      } else {
+        updated++;
+      }
     }
 
+    console.log(`Updated ${updated}/${results.length} transactions`);
     return jsonResponse({ updated, total: results.length });
   } catch (err) {
     console.error("Edge function error:", err);
-    return jsonResponse({ error: "Internal server error" }, 500);
+    return jsonResponse({ error: `Internal error: ${(err as Error).message}` }, 500);
   }
 });
