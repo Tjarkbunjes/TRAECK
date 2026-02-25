@@ -587,15 +587,15 @@ export default function BudgetPage() {
                 </ResponsiveContainer>
 
                 {/* Legend */}
-                <div className="flex items-center justify-center gap-4 pt-1">
+                <div className="flex items-center justify-center gap-4 mt-2 text-xs">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-3 h-2 rounded-sm bg-[#2626FF]" />
-                    <span className="text-[10px] text-muted-foreground">spending</span>
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#2626FF]" />
+                    <span className="text-[#d4d4d4]">spending</span>
                   </div>
                   {budgetPerDay > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <div className="w-3 border-t border-dashed border-[#888]" />
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="inline-block h-0.5 w-4" style={{ borderTop: '2px dashed #888', background: 'none' }} />
+                      <span className="text-[#d4d4d4]">
                         budget ({Math.round(spendingView === 'W' ? budgetPerDay * 7 : budgetPerDay)} €/{spendingView === 'W' ? 'week' : 'day'})
                       </span>
                     </div>
