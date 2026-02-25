@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
-import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship, DailyFoodAggregate, GarminHealthEntry } from './types';
+import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship, DailyFoodAggregate, GarminHealthEntry, AppleHealthEntry } from './types';
 import { format } from 'date-fns';
 
 export function useProfile() {
@@ -453,4 +453,75 @@ export function useGarminData(days: number = 30) {
   }, [days]);
 
   return { entries, loading };
+}
+
+// Parse Apple Health start_date text into a Date object
+// Handles "25. Feb 2026 at 11:02" and "25 Feb 2026 at 13:18"
+function parseHealthDate(raw: string): Date {
+  const cleaned = raw.replace(/\.\s/, ' ').replace(' at ', ' ');
+  const d = new Date(cleaned);
+  if (!isNaN(d.getTime())) return d;
+  return new Date(raw);
+}
+
+export function useAppleHealthData(days: number = 30) {
+  const [entries, setEntries] = useState<AppleHealthEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const start = new Date();
+      start.setDate(start.getDate() - days);
+
+      const { data } = await supabase
+        .from('health_data')
+        .select('*')
+        .eq('user_id', user.id)
+        .gte('uploaded_at', start.toISOString())
+        .order('uploaded_at', { ascending: true });
+
+      setEntries(data || []);
+      setLoading(false);
+    }
+    load();
+  }, [days]);
+
+  return { entries, loading };
+}
+
+export function useTodaySteps() {
+  const [steps, setSteps] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const { data } = await supabase
+        .from('health_data')
+        .select('value')
+        .eq('user_id', user.id)
+        .eq('type', 'steps')
+        .gte('uploaded_at', todayStart.toISOString());
+
+      if (data && data.length > 0) {
+        const total = data.reduce((sum, row) => sum + (parseFloat(row.value) || 0), 0);
+        setSteps(Math.round(total));
+      } else {
+        setSteps(null);
+      }
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  return { steps, loading };
 }

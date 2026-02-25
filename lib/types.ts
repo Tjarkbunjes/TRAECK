@@ -209,6 +209,15 @@ export interface JournalEntry {
   created_at: string;
 }
 
+export interface AppleHealthEntry {
+  id: number;
+  type: string;
+  value: string;
+  start_date: string;
+  user_id: string;
+  uploaded_at: string;
+}
+
 export interface AIFoodResult {
   name: string;
   serving_grams: number;

@@ -3,11 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { format, startOfWeek, addDays, subDays, subWeeks, isSameWeek } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile, useGarminData } from '@/lib/hooks';
+import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile, useGarminData, useTodaySteps } from '@/lib/hooks';
 import { MacroRings } from '@/components/MacroRings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight, NotebookPen, Send } from 'lucide-react';
+import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight, NotebookPen, Send, Footprints } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,6 +27,7 @@ export default function HomePage() {
   const { workouts } = useWorkouts();
   const { entries: garminEntries } = useGarminData(1);
   const todayGarmin = garminEntries.find(e => e.date === today) ?? null;
+  const { steps: todaySteps } = useTodaySteps();
   const [weekOffset, setWeekOffset] = useState(0);
   const [weeklyFood, setWeeklyFood] = useState<Map<number, number>>(new Map());
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Map<number, string>>(new Map());
@@ -203,6 +204,21 @@ export default function HomePage() {
         </Card>
       )}
 
+
+      {/* Steps Card */}
+      {todaySteps !== null && todaySteps > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Footprints className="h-5 w-5 text-[#2DCAEF]" />
+              <div>
+                <p className="text-2xl font-bold font-mono">{todaySteps.toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">steps today</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Garmin Intraday HR */}
       {todayGarmin?.hr_values && todayGarmin.hr_values.length > 0 && (() => {
