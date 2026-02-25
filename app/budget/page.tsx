@@ -118,6 +118,7 @@ export default function BudgetPage() {
   const [importing, setImporting] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedBar, setSelectedBar] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Only expenses (positive amounts = expenses stored as absolute values)
@@ -252,6 +253,15 @@ export default function BudgetPage() {
       }
     }
 
+    // Filter by selected category
+    if (selectedCategory) {
+      if (selectedCategory === 'uncategorized') {
+        result = result.filter(t => !t.category);
+      } else {
+        result = result.filter(t => t.category === selectedCategory);
+      }
+    }
+
     // Filter by search
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -263,7 +273,7 @@ export default function BudgetPage() {
     }
 
     return result;
-  }, [transactions, search, selectedBar]);
+  }, [transactions, search, selectedBar, selectedCategory]);
 
   // ── Save budget ──
   function handleSaveBudget() {
@@ -629,9 +639,15 @@ export default function BudgetPage() {
                   const label = catInfo?.label || category;
                   const color = catInfo?.color || '#6B7280';
                   const barPct = maxCatAmount > 0 ? (amount / maxCatAmount) * 100 : 0;
+                  const isActive = selectedCategory === category;
 
                   return (
-                    <div key={category} className="space-y-1">
+                    <div
+                      key={category}
+                      className="space-y-1 cursor-pointer transition-opacity"
+                      style={{ opacity: selectedCategory && !isActive ? 0.4 : 1 }}
+                      onClick={() => setSelectedCategory(prev => prev === category ? null : category)}
+                    >
                       <div className="flex justify-between text-xs">
                         <span style={{ color }}>{label}</span>
                         <span className="font-mono">{amount.toFixed(0)} EUR · {pct}%</span>
@@ -669,11 +685,11 @@ export default function BudgetPage() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
-                transactions ({filteredTransactions.length}{selectedBar ? ` of ${transactions.length}` : ''})
+                transactions ({filteredTransactions.length}{(selectedBar || selectedCategory) ? ` of ${transactions.length}` : ''})
               </p>
-              {selectedBar && (
+              {(selectedBar || selectedCategory) && (
                 <button
-                  onClick={() => setSelectedBar(null)}
+                  onClick={() => { setSelectedBar(null); setSelectedCategory(null); }}
                   className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <X className="h-3 w-3" />
