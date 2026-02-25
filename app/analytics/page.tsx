@@ -776,8 +776,20 @@ function AppleHealthSection({ entries }: { entries: AppleHealthEntry[] }) {
                   interval={stepsView === 'D' ? 5 : 'preserveStartEnd'}
                 />
                 <YAxis tick={{ fill: '#d4d4d4', fontSize: 9 }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: '#d4d4d4' }} formatter={(v: number | undefined) => [(v ?? 0).toLocaleString(), 'steps']} />
-                <Bar dataKey="steps" fill="#2DCAEF" radius={[2, 2, 0, 0]} />
+                <Tooltip
+                  cursor={false}
+                  content={({ active, payload, label }) => {
+                    if (!active || !payload?.[0]) return null;
+                    const val = payload[0].value as number;
+                    return (
+                      <div style={{ backgroundColor: '#0F0F0F', border: '1px solid #292929', borderRadius: 6, padding: '6px 10px' }}>
+                        <p style={{ color: '#fff', fontSize: 13, fontWeight: 600, fontFamily: 'monospace' }}>{val.toLocaleString()} steps</p>
+                        <p style={{ color: '#888', fontSize: 10 }}>{stepsView === 'D' ? `${label}:00` : label}</p>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="steps" fill="#2DCAEF" radius={[2, 2, 0, 0]} activeBar={{ fill: '#5dd9f5' }} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -940,8 +952,20 @@ function AppleHealthSection({ entries }: { entries: AppleHealthEntry[] }) {
                   <BarChart data={dailyDistance} margin={{ top: 4, right: 0, left: -24, bottom: 0 }}>
                     <XAxis dataKey="date" tick={{ fill: '#d4d4d4', fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                     <YAxis tick={{ fill: '#d4d4d4', fontSize: 10 }} tickLine={false} axisLine={false} />
-                    <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: '#d4d4d4' }} formatter={(v: number | undefined) => [v ?? '–', 'km']} />
-                    <Bar dataKey="km" fill="#2DCAEF" radius={[2, 2, 0, 0]} />
+                    <Tooltip
+                      cursor={false}
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload?.[0]) return null;
+                        const val = payload[0].value as number;
+                        return (
+                          <div style={{ backgroundColor: '#0F0F0F', border: '1px solid #292929', borderRadius: 6, padding: '6px 10px' }}>
+                            <p style={{ color: '#fff', fontSize: 13, fontWeight: 600, fontFamily: 'monospace' }}>{val} km</p>
+                            <p style={{ color: '#888', fontSize: 10 }}>{label}</p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Bar dataKey="km" fill="#2DCAEF" radius={[2, 2, 0, 0]} activeBar={{ fill: '#5dd9f5' }} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
