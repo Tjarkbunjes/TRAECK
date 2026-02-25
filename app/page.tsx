@@ -205,21 +205,6 @@ export default function HomePage() {
       )}
 
 
-      {/* Steps Card */}
-      {todaySteps !== null && todaySteps > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Footprints className="h-5 w-5 text-[#2DCAEF]" />
-              <div>
-                <p className="text-2xl font-bold font-mono">{todaySteps.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">steps today</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Garmin Intraday HR */}
       {todayGarmin?.hr_values && todayGarmin.hr_values.length > 0 && (() => {
         const chartData = todayGarmin.hr_values!.map(({ t, hr }) => ({
@@ -284,12 +269,24 @@ export default function HomePage() {
         </Button>
       </div>
 
-      {/* Journal */}
-      <Button className="h-14 w-full relative" variant="outline" onClick={() => setJournalOpen(true)}>
-        <NotebookPen className="mr-2 h-5 w-5" />
-        journal
-        <span className="absolute right-3 text-[10px] text-muted-foreground">yesterday</span>
-      </Button>
+      {/* Journal + Steps */}
+      <div className="grid grid-cols-2 gap-2">
+        <Button className="h-14 relative" variant="outline" onClick={() => setJournalOpen(true)}>
+          <NotebookPen className="mr-2 h-5 w-5" />
+          journal
+        </Button>
+        {todaySteps !== null && todaySteps > 0 ? (
+          <Card>
+            <CardContent className="p-0 h-14 flex items-center justify-center gap-2">
+              <Footprints className="h-4 w-4 text-[#2DCAEF]" />
+              <span className="text-lg font-bold font-mono">{todaySteps.toLocaleString()}</span>
+              <span className="text-[10px] text-muted-foreground">steps</span>
+            </CardContent>
+          </Card>
+        ) : (
+          <div />
+        )}
+      </div>
 
       <JournalDialog open={journalOpen} onClose={() => setJournalOpen(false)} initialDate={yesterday} />
 

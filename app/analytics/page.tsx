@@ -615,30 +615,27 @@ function AppleHealthSection({ entries }: { entries: AppleHealthEntry[] }) {
 
       {/* Steps */}
       {hasSteps && (
-        <>
-          <Card>
+        <div className="grid grid-cols-[auto_1fr] gap-2">
+          <Card className="flex items-center">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Footprints className="h-4 w-4 text-[#2DCAEF]" />
-                <p className="text-xs text-muted-foreground">avg. daily steps</p>
-              </div>
-              <p className="text-3xl font-bold font-mono mt-1">{avgSteps.toLocaleString()}</p>
+              <Footprints className="h-4 w-4 text-[#2DCAEF] mb-1" />
+              <p className="text-2xl font-bold font-mono">{avgSteps.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground">avg/day</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-4">
-              <p className="text-xs text-muted-foreground mb-2">daily steps</p>
-              <ResponsiveContainer width="100%" height={140}>
-                <BarChart data={dailySteps} margin={{ top: 4, right: 0, left: -24, bottom: 0 }}>
-                  <XAxis dataKey="date" tick={{ fill: '#d4d4d4', fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                  <YAxis tick={{ fill: '#d4d4d4', fontSize: 10 }} tickLine={false} axisLine={false} />
+            <CardContent className="pt-3 pr-2">
+              <ResponsiveContainer width="100%" height={80}>
+                <BarChart data={dailySteps} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
+                  <XAxis dataKey="date" tick={{ fill: '#d4d4d4', fontSize: 9 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                  <YAxis tick={{ fill: '#d4d4d4', fontSize: 9 }} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: '#d4d4d4' }} formatter={(v: number | undefined) => [(v ?? 0).toLocaleString(), 'steps']} />
                   <Bar dataKey="steps" fill="#2DCAEF" radius={[2, 2, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
-        </>
+        </div>
       )}
 
       {/* Heart Rate */}
