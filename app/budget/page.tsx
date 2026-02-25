@@ -549,10 +549,11 @@ export default function BudgetPage() {
                         strokeDasharray="4 4"
                         strokeWidth={1}
                         label={{
-                          value: `${Math.round(spendingView === 'W' ? budgetPerDay * 7 : budgetPerDay)} €/avg`,
-                          position: 'right',
+                          value: `${Math.round(spendingView === 'W' ? budgetPerDay * 7 : budgetPerDay)} €`,
+                          position: 'insideTopLeft',
                           fill: '#888',
                           fontSize: 9,
+                          offset: 2,
                         }}
                       />
                     )}
