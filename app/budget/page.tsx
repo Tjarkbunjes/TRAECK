@@ -304,8 +304,17 @@ export default function BudgetPage() {
       });
 
       if (res.error) {
-        console.error('Categorize error:', res.error);
-        toast.error(`categorization failed: ${res.error.message || res.error}`);
+        // Extract actual error body from FunctionsHttpError
+        let detail = res.error.message;
+        try {
+          const ctx = (res.error as any).context;
+          if (ctx && typeof ctx.json === 'function') {
+            const body = await ctx.json();
+            detail = body?.error || JSON.stringify(body);
+          }
+        } catch { /* ignore */ }
+        console.error('Categorize error:', detail);
+        toast.error(`categorization failed: ${detail}`);
       } else if (res.data?.error) {
         console.error('Categorize API error:', res.data.error);
         toast.error(`categorization failed: ${res.data.error}`);
@@ -313,8 +322,9 @@ export default function BudgetPage() {
         toast.success(`categorized ${res.data?.updated ?? uncategorized.length} transactions.`);
         refresh();
       }
-    } catch {
-      toast.error('categorization failed.');
+    } catch (err) {
+      console.error('Categorize exception:', err);
+      toast.error(`categorization failed: ${(err as Error).message}`);
     }
     setCategorizing(false);
   }
