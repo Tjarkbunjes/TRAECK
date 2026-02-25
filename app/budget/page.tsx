@@ -304,9 +304,13 @@ export default function BudgetPage() {
       });
 
       if (res.error) {
-        toast.error('categorization failed.');
+        console.error('Categorize error:', res.error);
+        toast.error(`categorization failed: ${res.error.message || res.error}`);
+      } else if (res.data?.error) {
+        console.error('Categorize API error:', res.data.error);
+        toast.error(`categorization failed: ${res.data.error}`);
       } else {
-        toast.success(`categorized ${uncategorized.length} transactions.`);
+        toast.success(`categorized ${res.data?.updated ?? uncategorized.length} transactions.`);
         refresh();
       }
     } catch {
