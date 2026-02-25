@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Pencil, Check, X, Loader2, Sparkles, Search, Upload } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { toast } from 'sonner';
 import { useRef } from 'react';
 
@@ -117,6 +117,7 @@ export default function BudgetPage() {
   const [categorizing, setCategorizing] = useState(false);
   const [importing, setImporting] = useState(false);
   const [search, setSearch] = useState('');
+  const [selectedBar, setSelectedBar] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Only expenses (positive amounts = expenses stored as absolute values)
@@ -132,35 +133,47 @@ export default function BudgetPage() {
   const spentPct = budgetAmount > 0 ? Math.min((totalSpent / budgetAmount) * 100, 100) : 0;
 
   // ── Daily spending data ──
+  const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+  const budgetPerDay = budgetAmount > 0 ? Math.round((budgetAmount / daysInMonth) * 100) / 100 : 0;
+
   const dailySpending = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of expenses) {
       const day = t.transaction_date;
       map.set(day, (map.get(day) || 0) + t.amount);
     }
-    const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
     return Array.from({ length: daysInMonth }, (_, i) => {
       const day = format(new Date(monthDate.getFullYear(), monthDate.getMonth(), i + 1), 'yyyy-MM-dd');
       return {
         label: String(i + 1),
+        date: day,
         amount: Math.round((map.get(day) || 0) * 100) / 100,
       };
     });
-  }, [expenses, monthDate]);
+  }, [expenses, monthDate, daysInMonth]);
 
   // ── Weekly spending data ──
   const weeklySpending = useMemo(() => {
-    const map = new Map<number, number>();
+    const weeks: { weekStart: Date; weekEnd: Date; amount: number }[] = [];
+    const map = new Map<number, { start: Date; end: Date; amount: number }>();
     for (const t of expenses) {
       const d = parseISO(t.transaction_date);
-      const weekStart = startOfWeek(d, { weekStartsOn: 1 });
-      const weekKey = weekStart.getTime();
-      map.set(weekKey, (map.get(weekKey) || 0) + t.amount);
+      const ws = startOfWeek(d, { weekStartsOn: 1 });
+      const we = endOfWeek(d, { weekStartsOn: 1 });
+      const key = ws.getTime();
+      const existing = map.get(key);
+      if (existing) {
+        existing.amount += t.amount;
+      } else {
+        map.set(key, { start: ws, end: we, amount: t.amount });
+      }
     }
     return Array.from(map.entries())
       .sort((a, b) => a[0] - b[0])
-      .map(([ts, amount], i) => ({
+      .map(([, { start, end, amount }], i) => ({
         label: `W${i + 1}`,
+        dateFrom: format(start, 'yyyy-MM-dd'),
+        dateTo: format(end, 'yyyy-MM-dd'),
         amount: Math.round(amount * 100) / 100,
       }));
   }, [expenses]);
@@ -197,16 +210,60 @@ export default function BudgetPage() {
   // ── Uncategorized count ──
   const uncategorizedCount = expenses.filter(t => !t.category).length;
 
+  // ── Bar click handler ──
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function handleBarClick(data: any, index: number) {
+    if (spendingView === 'D') {
+      const day = dailySpending[index]?.date;
+      if (!day) return;
+      setSelectedBar(prev => prev === day ? null : day);
+    } else if (spendingView === 'W') {
+      const week = weeklySpending[index];
+      if (!week) return;
+      const key = `${week.dateFrom}|${week.dateTo}`;
+      setSelectedBar(prev => prev === key ? null : key);
+    } else {
+      // M view uses same data as D
+      const day = dailySpending[index]?.date;
+      if (!day) return;
+      setSelectedBar(prev => prev === day ? null : day);
+    }
+  }
+
+  // Clear bar selection when switching views
+  const handleViewChange = (v: SpendingView) => {
+    setSpendingView(v);
+    setSelectedBar(null);
+  };
+
   // ── Filtered transactions ──
   const filteredTransactions = useMemo(() => {
-    if (!search.trim()) return transactions;
-    const q = search.toLowerCase();
-    return transactions.filter(t =>
-      t.merchant.toLowerCase().includes(q) ||
-      (t.description && t.description.toLowerCase().includes(q)) ||
-      (t.category && t.category.toLowerCase().includes(q))
-    );
-  }, [transactions, search]);
+    let result = transactions;
+
+    // Filter by selected bar
+    if (selectedBar) {
+      if (selectedBar.includes('|')) {
+        // Week range: "dateFrom|dateTo"
+        const [from, to] = selectedBar.split('|');
+        result = result.filter(t => t.transaction_date >= from && t.transaction_date <= to);
+      } else {
+        // Single day
+        result = result.filter(t => t.transaction_date === selectedBar);
+      }
+    }
+
+    // Filter by search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(t =>
+        t.merchant.toLowerCase().includes(q) ||
+        (t.description && t.description.toLowerCase().includes(q)) ||
+        (t.category && t.category.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [transactions, search, selectedBar]);
 
   // ── Save budget ──
   function handleSaveBudget() {
@@ -453,7 +510,7 @@ export default function BudgetPage() {
                     {(['D', 'W', 'M'] as const).map(v => (
                       <button
                         key={v}
-                        onClick={() => setSpendingView(v)}
+                        onClick={() => handleViewChange(v)}
                         className={`px-2.5 py-1 text-xs transition-colors ${spendingView === v ? 'bg-[#2626FF] text-white' : 'text-muted-foreground hover:text-foreground'}`}
                       >
                         {v}
@@ -485,7 +542,46 @@ export default function BudgetPage() {
                         );
                       }}
                     />
-                    <Bar dataKey="amount" fill="#2626FF" radius={[2, 2, 0, 0]} activeBar={{ fill: '#4a4aFF' }} />
+                    {budgetPerDay > 0 && (
+                      <ReferenceLine
+                        y={spendingView === 'W' ? budgetPerDay * 7 : budgetPerDay}
+                        stroke="#888"
+                        strokeDasharray="4 4"
+                        strokeWidth={1}
+                      />
+                    )}
+                    <Bar
+                      dataKey="amount"
+                      fill="#2626FF"
+                      radius={[2, 2, 0, 0]}
+                      activeBar={{ fill: '#4a4aFF' }}
+                      onClick={handleBarClick}
+                      cursor="pointer"
+                      shape={(props: any) => {
+                        const { x, y, width, height, index } = props;
+                        let isSelected = false;
+                        if (selectedBar) {
+                          if (spendingView === 'W') {
+                            const week = weeklySpending[index];
+                            isSelected = week ? selectedBar === `${week.dateFrom}|${week.dateTo}` : false;
+                          } else {
+                            const day = dailySpending[index];
+                            isSelected = day ? selectedBar === day.date : false;
+                          }
+                        }
+                        return (
+                          <rect
+                            x={x}
+                            y={y}
+                            width={width}
+                            height={height}
+                            fill={isSelected ? '#6a6aFF' : '#2626FF'}
+                            rx={2}
+                            ry={2}
+                          />
+                        );
+                      }}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -541,7 +637,18 @@ export default function BudgetPage() {
           {/* Transaction List */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">transactions ({transactions.length})</p>
+              <p className="text-xs text-muted-foreground">
+                transactions ({filteredTransactions.length}{selectedBar ? ` of ${transactions.length}` : ''})
+              </p>
+              {selectedBar && (
+                <button
+                  onClick={() => setSelectedBar(null)}
+                  className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                  clear filter
+                </button>
+              )}
             </div>
 
             {/* Search */}
