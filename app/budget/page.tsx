@@ -119,6 +119,10 @@ export default function BudgetPage() {
   const [search, setSearch] = useState('');
   const [selectedBar, setSelectedBar] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [editingTxId, setEditingTxId] = useState<string | null>(null);
+  const [editMerchant, setEditMerchant] = useState('');
+  const [editCategory, setEditCategory] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Only expenses (positive amounts = expenses stored as absolute values)
@@ -274,6 +278,31 @@ export default function BudgetPage() {
 
     return result;
   }, [transactions, search, selectedBar, selectedCategory]);
+
+  // ── Edit transaction ──
+  function startEditing(t: CreditCardTransaction) {
+    setEditingTxId(t.id);
+    setEditMerchant(t.merchant);
+    setEditCategory(t.category);
+  }
+
+  async function saveTransaction() {
+    if (!editingTxId || !editMerchant.trim()) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from('credit_card_transactions')
+      .update({ merchant: editMerchant.trim(), description: editMerchant.trim(), category: editCategory })
+      .eq('id', editingTxId);
+
+    if (error) {
+      toast.error('failed to save.');
+    } else {
+      toast.success('updated.');
+      refresh();
+    }
+    setSaving(false);
+    setEditingTxId(null);
+  }
 
   // ── Save budget ──
   function handleSaveBudget() {
@@ -712,10 +741,81 @@ export default function BudgetPage() {
             <div className="space-y-1">
               {filteredTransactions.map((t) => {
                 const catInfo = t.category ? SPENDING_CATEGORIES[t.category] : null;
+                const isEditing = editingTxId === t.id;
+
+                if (isEditing) {
+                  return (
+                    <div
+                      key={t.id}
+                      className="p-2.5 rounded-lg bg-[#1E1E1E] border border-[#2626FF] space-y-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editMerchant}
+                          onChange={(e) => setEditMerchant(e.target.value)}
+                          className="h-8 text-sm flex-1"
+                          autoFocus
+                          onKeyDown={(e) => e.key === 'Enter' && saveTransaction()}
+                        />
+                        <span className="text-sm font-mono font-medium shrink-0 text-white">
+                          -{t.amount.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {Object.entries(SPENDING_CATEGORIES).map(([key, { label, color }]) => (
+                          <button
+                            key={key}
+                            onClick={() => setEditCategory(key)}
+                            className="text-[10px] px-2 py-0.5 rounded-full transition-opacity"
+                            style={{
+                              backgroundColor: color + (editCategory === key ? '40' : '15'),
+                              color,
+                              opacity: editCategory && editCategory !== key ? 0.4 : 1,
+                            }}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                        <button
+                          onClick={() => setEditCategory(null)}
+                          className="text-[10px] px-2 py-0.5 rounded-full transition-opacity"
+                          style={{
+                            backgroundColor: editCategory === null ? '#6B728040' : '#6B728015',
+                            color: '#6B7280',
+                            opacity: editCategory !== null ? 0.4 : 1,
+                          }}
+                        >
+                          none
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setEditingTxId(null)}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-[#2626FF]"
+                          onClick={saveTransaction}
+                          disabled={saving}
+                        >
+                          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={t.id}
-                    className="flex items-center justify-between p-2.5 rounded-lg bg-[#1E1E1E] border border-[#292929]"
+                    className="flex items-center justify-between p-2.5 rounded-lg bg-[#1E1E1E] border border-[#292929] cursor-pointer active:border-[#444]"
+                    onClick={() => startEditing(t)}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{t.merchant}</p>
