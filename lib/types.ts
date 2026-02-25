@@ -214,6 +214,7 @@ export interface JournalEntry {
   energy_level: number | null;
   hydration: number | null;
   slept_with_partner: boolean | null;
+  note: string | null;
   created_at: string;
 }
 

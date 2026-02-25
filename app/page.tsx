@@ -39,6 +39,8 @@ export default function HomePage() {
   const [devNote, setDevNote] = useState('');
   const [sendingNote, setSendingNote] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [dailyNote, setDailyNote] = useState('');
+  const [noteSaved, setNoteSaved] = useState('');
   const pullStartY = useRef(0);
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
@@ -46,6 +48,31 @@ export default function HomePage() {
     setRefreshing(true);
     window.location.reload();
   }, []);
+
+  // Load today's note
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('journal_entries')
+      .select('note')
+      .eq('user_id', user.id)
+      .eq('date', today)
+      .maybeSingle()
+      .then(({ data }) => {
+        const n = data?.note || '';
+        setDailyNote(n);
+        setNoteSaved(n);
+      });
+  }, [user, today]);
+
+  async function saveNote() {
+    if (!user || dailyNote === noteSaved) return;
+    await supabase.from('journal_entries').upsert(
+      { user_id: user.id, date: today, note: dailyNote || null },
+      { onConflict: 'user_id,date' }
+    );
+    setNoteSaved(dailyNote);
+  }
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -225,6 +252,16 @@ export default function HomePage() {
         </Card>
       )}
 
+      {/* Quick Note */}
+      <input
+        type="text"
+        placeholder="note for today..."
+        value={dailyNote}
+        onChange={(e) => setDailyNote(e.target.value)}
+        onBlur={saveNote}
+        onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+        className="w-full bg-[#1E1E1E] border border-[#292929] rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#444]"
+      />
 
       {/* Garmin Intraday HR */}
       {todayGarmin?.hr_values && todayGarmin.hr_values.length > 0 && (() => {
