@@ -260,7 +260,7 @@ export default function HomePage() {
         onChange={(e) => setDailyNote(e.target.value)}
         onBlur={saveNote}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-        className="w-full bg-[#1E1E1E] border border-[#292929] rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#444]"
+        className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#444]"
       />
 
       {/* Garmin Intraday HR */}
