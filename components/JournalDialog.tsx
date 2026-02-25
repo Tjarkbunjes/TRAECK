@@ -82,6 +82,8 @@ export function JournalDialog({ open, onClose, initialDate }: Props) {
         </DialogHeader>
 
         <div className="space-y-0 py-1">
+          <SectionLabel text="sleep" />
+
           <Row label="Hours Slept">
             <div className="flex items-center gap-1.5">
               <input
@@ -99,18 +101,34 @@ export function JournalDialog({ open, onClose, initialDate }: Props) {
             <Scale value={draft.sleep_quality ?? null} onChange={v => set('sleep_quality', v)} max={5} />
           </Row>
 
-          <Row label="Sweets">
-            <YesNo value={draft.sweets ?? null} onChange={v => set('sweets', v)} />
+          <SectionLabel text="subjective" />
+
+          <Row label="Mood">
+            <Scale value={draft.mood ?? null} onChange={v => set('mood', v)} max={5} />
           </Row>
 
-          <Row label="Last Meal">
-            <input
-              type="time"
-              value={draft.last_meal_time ?? ''}
-              onChange={e => set('last_meal_time', e.target.value || null)}
-              className="bg-[#1E1E1E] border border-[#292929] rounded-md px-2 py-1 text-sm font-mono focus:outline-none focus:border-[#444]"
+          <Row label="Energy Level">
+            <Scale value={draft.energy_level ?? null} onChange={v => set('energy_level', v)} max={5} />
+          </Row>
+
+          <Row label="Stress Level">
+            <Scale value={draft.stress_level ?? null} onChange={v => set('stress_level', v)} max={5} />
+          </Row>
+
+          <SectionLabel text="substances" />
+
+          <Row label="Caffeine">
+            <YesNo
+              value={draft.caffeine ?? null}
+              onChange={v => { set('caffeine', v); if (!v) set('caffeine_amount', null); }}
             />
           </Row>
+
+          {draft.caffeine && (
+            <Row label="Caffeine Amount">
+              <Scale value={draft.caffeine_amount ?? null} onChange={v => set('caffeine_amount', v)} max={5} />
+            </Row>
+          )}
 
           <Row label="Alcohol">
             <YesNo
@@ -124,6 +142,31 @@ export function JournalDialog({ open, onClose, initialDate }: Props) {
               <Scale value={draft.alcohol_amount ?? null} onChange={v => set('alcohol_amount', v)} max={5} />
             </Row>
           )}
+
+          <SectionLabel text="behaviors" />
+
+          <Row label="Screen Before Bed">
+            <YesNo value={draft.screen_before_bed ?? null} onChange={v => set('screen_before_bed', v)} />
+          </Row>
+
+          <Row label="Last Meal">
+            <input
+              type="time"
+              value={draft.last_meal_time ?? ''}
+              onChange={e => set('last_meal_time', e.target.value || null)}
+              className="bg-[#1E1E1E] border border-[#292929] rounded-md px-2 py-1 text-sm font-mono focus:outline-none focus:border-[#444]"
+            />
+          </Row>
+
+          <Row label="Hydration">
+            <Scale value={draft.hydration ?? null} onChange={v => set('hydration', v)} max={3} />
+          </Row>
+
+          <SectionLabel text="other" />
+
+          <Row label="Sweets">
+            <YesNo value={draft.sweets ?? null} onChange={v => set('sweets', v)} />
+          </Row>
 
           <Row label="Sex">
             <YesNo value={draft.sex ?? null} onChange={v => set('sex', v)} />
@@ -139,6 +182,12 @@ export function JournalDialog({ open, onClose, initialDate }: Props) {
         </Button>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SectionLabel({ text }: { text: string }) {
+  return (
+    <p className="text-[10px] uppercase tracking-wider text-muted-foreground pt-3 pb-1">{text}</p>
   );
 }
 

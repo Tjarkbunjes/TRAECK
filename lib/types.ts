@@ -206,6 +206,13 @@ export interface JournalEntry {
   alcohol_amount: number | null;
   sex: boolean | null;
   magnesium_zinc: boolean | null;
+  caffeine: boolean | null;
+  caffeine_amount: number | null;
+  stress_level: number | null;
+  screen_before_bed: boolean | null;
+  mood: number | null;
+  energy_level: number | null;
+  hydration: number | null;
   created_at: string;
 }
 
