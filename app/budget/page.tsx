@@ -548,13 +548,7 @@ export default function BudgetPage() {
                         stroke="#888"
                         strokeDasharray="4 4"
                         strokeWidth={1}
-                        label={{
-                          value: `${Math.round(spendingView === 'W' ? budgetPerDay * 7 : budgetPerDay)} €`,
-                          position: 'insideTopLeft',
-                          fill: '#888',
-                          fontSize: 9,
-                          offset: 2,
-                        }}
+                        label={undefined}
                       />
                     )}
                     <Bar
@@ -591,6 +585,22 @@ export default function BudgetPage() {
                     />
                   </BarChart>
                 </ResponsiveContainer>
+
+                {/* Legend */}
+                <div className="flex items-center justify-center gap-4 pt-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-2 rounded-sm bg-[#2626FF]" />
+                    <span className="text-[10px] text-muted-foreground">spending</span>
+                  </div>
+                  {budgetPerDay > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 border-t border-dashed border-[#888]" />
+                      <span className="text-[10px] text-muted-foreground">
+                        budget ({Math.round(spendingView === 'W' ? budgetPerDay * 7 : budgetPerDay)} €/{spendingView === 'W' ? 'week' : 'day'})
+                      </span>
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}
