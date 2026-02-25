@@ -238,3 +238,34 @@ export const MUSCLE_GROUP_LABELS: Record<string, string> = {
   core: 'Core',
   cardio: 'Cardio',
 };
+
+export interface CreditCardTransaction {
+  id: string;
+  user_id: string;
+  transaction_date: string;
+  booking_date: string;
+  amount: number;
+  currency: string;
+  merchant: string;
+  description: string | null;
+  category: string | null;
+  booking_reference: string | null;
+  created_at: string;
+}
+
+export interface MonthlyBudget {
+  id: string;
+  user_id: string;
+  month: string;
+  budget_amount: number;
+}
+
+export const SPENDING_CATEGORIES: Record<string, { label: string; color: string }> = {
+  transport: { label: 'Transport', color: '#F59E0B' },
+  dining: { label: 'Dining & Bars', color: '#EF4444' },
+  groceries: { label: 'Groceries', color: '#22C55E' },
+  shopping: { label: 'Shopping', color: '#A78BFA' },
+  entertainment: { label: 'Entertainment', color: '#EC4899' },
+  subscriptions: { label: 'Subscriptions', color: '#6366F1' },
+  other: { label: 'Other', color: '#6B7280' },
+};

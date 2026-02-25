@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { Suspense, useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import dynamic from 'next/dynamic';
 import { useAuth, useWeightEntries, useProfile, useAnalyticsWorkouts, useAnalyticsFood, useGarminData, useAppleHealthData } from '@/lib/hooks';
 import type { GarminHealthEntry, AppleHealthEntry } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { FriendsSection } from '@/components/FriendsSection';
 
 const WeightChart = dynamic(() => import('@/components/WeightChart').then(m => ({ default: m.WeightChart })), { ssr: false });
 const CalorieChart = dynamic(() => import('@/components/CalorieChart').then(m => ({ default: m.CalorieChart })), { ssr: false });
@@ -19,9 +21,22 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContai
 type TimeRange = '7' | '30' | '90' | '365';
 type Category = string; // 'all' or a workout name
 
+type AnalyticsTab = 'data' | 'friends';
+
 export default function AnalyticsPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center text-muted-foreground">loading...</div>}>
+      <AnalyticsContent />
+    </Suspense>
+  );
+}
+
+function AnalyticsContent() {
   const { user } = useAuth();
   const { profile } = useProfile();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'friends' ? 'friends' : 'data';
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>(initialTab);
   const [range, setRange] = useState<TimeRange>('30');
   const days = parseInt(range);
 
@@ -147,23 +162,43 @@ export default function AnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">analytics</h1>
-        <Tabs value={range} onValueChange={(v) => setRange(v as TimeRange)}>
-          <TabsList className="h-8">
-            <TabsTrigger value="7" className="text-xs px-2 h-6">7d</TabsTrigger>
-            <TabsTrigger value="30" className="text-xs px-2 h-6">30d</TabsTrigger>
-            <TabsTrigger value="90" className="text-xs px-2 h-6">90d</TabsTrigger>
-            <TabsTrigger value="365" className="text-xs px-2 h-6">1y</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {activeTab === 'data' && (
+          <Tabs value={range} onValueChange={(v) => setRange(v as TimeRange)}>
+            <TabsList className="h-8">
+              <TabsTrigger value="7" className="text-xs px-2 h-6">7d</TabsTrigger>
+              <TabsTrigger value="30" className="text-xs px-2 h-6">30d</TabsTrigger>
+              <TabsTrigger value="90" className="text-xs px-2 h-6">90d</TabsTrigger>
+              <TabsTrigger value="365" className="text-xs px-2 h-6">1y</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
       </div>
 
-      {isLoading && (
+      {/* Data / Friends Tab Selector */}
+      <div className="flex rounded-md border border-[#292929] overflow-hidden">
+        <button
+          onClick={() => setActiveTab('data')}
+          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'data' ? 'bg-[#2626FF] text-white' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          data
+        </button>
+        <button
+          onClick={() => setActiveTab('friends')}
+          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'friends' ? 'bg-[#2626FF] text-white' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          friends
+        </button>
+      </div>
+
+      {activeTab === 'friends' && <FriendsSection />}
+
+      {activeTab === 'data' && isLoading && (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       )}
 
-      {!isLoading && (
+      {activeTab === 'data' && !isLoading && (
         <>
           {/* ── Weight Section ── */}
           <section className="space-y-2">

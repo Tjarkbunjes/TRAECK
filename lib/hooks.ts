@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
-import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship, DailyFoodAggregate, GarminHealthEntry, AppleHealthEntry } from './types';
+import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship, DailyFoodAggregate, GarminHealthEntry, AppleHealthEntry, CreditCardTransaction, MonthlyBudget } from './types';
 import { format } from 'date-fns';
 
 export function useProfile() {
@@ -524,4 +524,72 @@ export function useTodaySteps() {
   }, []);
 
   return { steps, loading };
+}
+
+export function useTransactions(month: string) {
+  const [transactions, setTransactions] = useState<CreditCardTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+
+    const startDate = `${month}-01`;
+    const [y, m] = month.split('-').map(Number);
+    const endDate = format(new Date(y, m, 0), 'yyyy-MM-dd');
+
+    const { data } = await supabase
+      .from('credit_card_transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('transaction_date', startDate)
+      .lte('transaction_date', endDate)
+      .order('transaction_date', { ascending: false });
+
+    setTransactions(data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, [month]);
+
+  return { transactions, loading, refresh: load };
+}
+
+export function useMonthlyBudget(month: string) {
+  const [budget, setBudget] = useState<MonthlyBudget | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+
+    const { data } = await supabase
+      .from('monthly_budgets')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('month', month)
+      .single();
+
+    setBudget(data);
+    setLoading(false);
+  }
+
+  async function saveBudget(amount: number) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase
+      .from('monthly_budgets')
+      .upsert({ user_id: user.id, month, budget_amount: amount }, { onConflict: 'user_id,month' });
+
+    setBudget(prev => prev
+      ? { ...prev, budget_amount: amount }
+      : { id: '', user_id: user.id, month, budget_amount: amount }
+    );
+  }
+
+  useEffect(() => { load(); }, [month]);
+
+  return { budget, loading, saveBudget };
 }
