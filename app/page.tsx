@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { format, startOfWeek, addDays, subDays, subWeeks, isSameWeek } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile, useGarminData, useTodaySteps } from '@/lib/hooks';
 import { MacroRings } from '@/components/MacroRings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight, NotebookPen, Send, Footprints } from 'lucide-react';
+import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight, NotebookPen, Send, Footprints, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,7 +38,14 @@ export default function HomePage() {
   const [journalOpen, setJournalOpen] = useState(false);
   const [devNote, setDevNote] = useState('');
   const [sendingNote, setSendingNote] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const pullStartY = useRef(0);
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+
+  const handlePullRefresh = useCallback(() => {
+    setRefreshing(true);
+    window.location.reload();
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -167,7 +174,21 @@ export default function HomePage() {
   }
 
   return (
-    <div className="mx-auto max-w-md p-4 space-y-4">
+    <div
+      className="mx-auto max-w-md p-4 space-y-4"
+      onTouchStart={(e) => { pullStartY.current = e.touches[0].clientY; }}
+      onTouchEnd={(e) => {
+        const pullDistance = e.changedTouches[0].clientY - pullStartY.current;
+        if (pullDistance > 120 && window.scrollY === 0) {
+          handlePullRefresh();
+        }
+      }}
+    >
+      {refreshing && (
+        <div className="flex justify-center py-2 -mt-2">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

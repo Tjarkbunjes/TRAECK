@@ -32,7 +32,12 @@ function AddFoodPageInner() {
   const editId = searchParams.get('edit');
   const { user } = useAuth();
 
-  const [mealType, setMealType] = useState<MealType>('lunch');
+  const [mealType, setMealType] = useState<MealType>(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'breakfast';
+    if (hour < 18) return 'lunch';
+    return 'dinner';
+  });
   const [foodName, setFoodName] = useState('');
   const [servingGrams, setServingGrams] = useState(100);
   const [caloriesPer100, setCaloriesPer100] = useState(0);

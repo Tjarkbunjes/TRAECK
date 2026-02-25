@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format, subMonths, addMonths, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 import { useAuth, useTransactions, useMonthlyBudget } from '@/lib/hooks';
 import { supabase } from '@/lib/supabase';
@@ -123,7 +123,22 @@ export default function BudgetPage() {
   const [editMerchant, setEditMerchant] = useState('');
   const [editCategory, setEditCategory] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [lastUpload, setLastUpload] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch last CSV upload date
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('credit_card_transactions')
+      .select('created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data?.[0]) setLastUpload(data[0].created_at);
+      });
+  }, [user, transactions]);
 
   // Only expenses (positive amounts = expenses stored as absolute values)
   const expenses = useMemo(() => transactions.filter(t => t.amount > 0), [transactions]);
@@ -449,6 +464,11 @@ export default function BudgetPage() {
             {importing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
             csv
           </button>
+          {lastUpload && (
+            <span className="text-[10px] text-muted-foreground">
+              last: {format(new Date(lastUpload), 'dd.MM')}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button

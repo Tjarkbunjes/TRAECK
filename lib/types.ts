@@ -213,6 +213,7 @@ export interface JournalEntry {
   mood: number | null;
   energy_level: number | null;
   hydration: number | null;
+  slept_with_partner: boolean | null;
   created_at: string;
 }
 

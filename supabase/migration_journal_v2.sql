@@ -8,4 +8,5 @@ ALTER TABLE journal_entries
   ADD COLUMN IF NOT EXISTS screen_before_bed boolean,
   ADD COLUMN IF NOT EXISTS mood int CHECK (mood BETWEEN 1 AND 5),
   ADD COLUMN IF NOT EXISTS energy_level int CHECK (energy_level BETWEEN 1 AND 5),
-  ADD COLUMN IF NOT EXISTS hydration int CHECK (hydration BETWEEN 1 AND 3);
+  ADD COLUMN IF NOT EXISTS hydration int CHECK (hydration BETWEEN 1 AND 3),
+  ADD COLUMN IF NOT EXISTS slept_with_partner boolean;

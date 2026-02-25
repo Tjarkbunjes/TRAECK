@@ -101,6 +101,10 @@ export function JournalDialog({ open, onClose, initialDate }: Props) {
             <Scale value={draft.sleep_quality ?? null} onChange={v => set('sleep_quality', v)} max={5} />
           </Row>
 
+          <Row label="Slept with Partner">
+            <YesNo value={draft.slept_with_partner ?? null} onChange={v => set('slept_with_partner', v)} />
+          </Row>
+
           <SectionLabel text="subjective" />
 
           <Row label="Mood">
