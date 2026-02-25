@@ -271,21 +271,31 @@ export default function HomePage() {
 
       {/* Journal + Steps */}
       <div className="grid grid-cols-2 gap-2">
-        <Button className="h-14 relative" variant="outline" onClick={() => setJournalOpen(true)}>
-          <NotebookPen className="mr-2 h-5 w-5" />
-          journal
-        </Button>
-        {todaySteps !== null && todaySteps > 0 ? (
-          <Card>
-            <CardContent className="p-0 h-14 flex items-center justify-center gap-2">
-              <Footprints className="h-4 w-4 text-[#2DCAEF]" />
-              <span className="text-lg font-bold font-mono">{todaySteps.toLocaleString()}</span>
-              <span className="text-[10px] text-muted-foreground">steps</span>
-            </CardContent>
-          </Card>
-        ) : (
-          <div />
-        )}
+        <Card
+          className="cursor-pointer transition-colors hover:bg-accent"
+          onClick={() => setJournalOpen(true)}
+        >
+          <CardContent className="p-0 h-14 flex items-center justify-center gap-2">
+            <NotebookPen className="h-4 w-4" />
+            <span className="text-sm font-medium">journal</span>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-0 h-14 flex items-center justify-center gap-2">
+            {todaySteps !== null && todaySteps > 0 ? (
+              <>
+                <Footprints className="h-4 w-4 text-[#2DCAEF]" />
+                <span className="text-lg font-bold font-mono">{todaySteps.toLocaleString()}</span>
+                <span className="text-[10px] text-muted-foreground">steps</span>
+              </>
+            ) : (
+              <>
+                <Footprints className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">–</span>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <JournalDialog open={journalOpen} onClose={() => setJournalOpen(false)} initialDate={yesterday} />

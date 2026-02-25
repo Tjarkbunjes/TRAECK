@@ -13,7 +13,7 @@ const CalorieChart = dynamic(() => import('@/components/CalorieChart').then(m =>
 const MuscleRadarChart = dynamic(() => import('@/components/MuscleRadarChart').then(m => ({ default: m.MuscleRadarChart })), { ssr: false });
 const ExerciseProgressionChart = dynamic(() => import('@/components/ExerciseProgressionChart').then(m => ({ default: m.ExerciseProgressionChart })), { ssr: false });
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TrendingDown, TrendingUp, Minus, Loader2, Footprints, Heart, Activity, Moon, MapPin } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, Loader2, Footprints, Heart, Activity, Moon, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 type TimeRange = '7' | '30' | '90' | '365';
@@ -494,13 +494,18 @@ function parseHealthDate(raw: string): Date {
 }
 
 function AppleHealthSection({ entries }: { entries: AppleHealthEntry[] }) {
-  // Group entries by type
-  const types = new Set(entries.map(e => e.type));
+  type StepsView = 'D' | 'W' | 'M';
+  const [stepsView, setStepsView] = useState<StepsView>('W');
+  const [dayOffset, setDayOffset] = useState(0);
+  const [nightIdx, setNightIdx] = useState(0);
 
-  // Aggregate steps by day
-  const dailySteps = useMemo(() => {
-    const stepEntries = entries.filter(e => e.type === 'steps');
-    if (stepEntries.length === 0) return [];
+  const types = new Set(entries.map(e => e.type));
+  const chartTooltipStyle = { backgroundColor: '#0F0F0F', border: '1px solid #292929', borderRadius: 6, fontSize: 12 };
+
+  // ── Steps data ──
+  const stepEntries = useMemo(() => entries.filter(e => e.type === 'steps'), [entries]);
+
+  const sortedStepDays = useMemo(() => {
     const map = new Map<string, number>();
     for (const e of stepEntries) {
       const date = format(parseHealthDate(e.start_date), 'yyyy-MM-dd');
@@ -508,38 +513,139 @@ function AppleHealthSection({ entries }: { entries: AppleHealthEntry[] }) {
     }
     return Array.from(map.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([date, steps]) => ({ date: date.slice(5), steps: Math.round(steps) }));
+      .map(([date, steps]) => ({ date, steps: Math.round(steps) }));
+  }, [stepEntries]);
+
+  // Daily view: selected day
+  const selectedDay = sortedStepDays.length > 0
+    ? sortedStepDays[Math.max(0, sortedStepDays.length - 1 - dayOffset)]
+    : null;
+
+  const hourlyData = useMemo(() => {
+    if (!selectedDay) return [];
+    const dayStr = selectedDay.date;
+    const filtered = stepEntries.filter(e => format(parseHealthDate(e.start_date), 'yyyy-MM-dd') === dayStr);
+    const hourMap = new Map<number, number>();
+    for (const e of filtered) {
+      const h = parseHealthDate(e.start_date).getHours();
+      hourMap.set(h, (hourMap.get(h) || 0) + (parseFloat(e.value) || 0));
+    }
+    return Array.from({ length: 24 }, (_, i) => ({
+      label: String(i),
+      steps: Math.round(hourMap.get(i) || 0),
+    }));
+  }, [stepEntries, selectedDay]);
+
+  const weeklyData = useMemo(() =>
+    sortedStepDays.slice(-7).map(d => ({ label: d.date.slice(5), steps: d.steps })),
+    [sortedStepDays]
+  );
+
+  const monthlyData = useMemo(() =>
+    sortedStepDays.map(d => ({ label: d.date.slice(5), steps: d.steps })),
+    [sortedStepDays]
+  );
+
+  const stepsChart = stepsView === 'D' ? hourlyData : stepsView === 'W' ? weeklyData : monthlyData;
+  const stepsKPI = stepsView === 'D'
+    ? (selectedDay?.steps || 0)
+    : stepsChart.length > 0 ? Math.round(stepsChart.reduce((s, d) => s + d.steps, 0) / stepsChart.length) : 0;
+  const stepsKPILabel = stepsView === 'D' ? 'total steps' : 'avg. steps/day';
+
+  const hasSteps = types.has('steps') && sortedStepDays.length > 0;
+
+  // ── Sleep data ──
+  const sleepNights = useMemo(() => {
+    const sleepEntries = entries.filter(e => e.type === 'sleep')
+      .map(e => ({ ...e, parsed: parseHealthDate(e.start_date) }))
+      .sort((a, b) => a.parsed.getTime() - b.parsed.getTime());
+
+    if (sleepEntries.length === 0) return [];
+
+    const nights: (typeof sleepEntries)[] = [];
+    let current: typeof sleepEntries = [];
+
+    for (const entry of sleepEntries) {
+      if (current.length === 0) {
+        current.push(entry);
+      } else {
+        const gap = entry.parsed.getTime() - current[current.length - 1].parsed.getTime();
+        if (gap > 4 * 60 * 60 * 1000) {
+          if (current.length >= 3) nights.push(current);
+          current = [entry];
+        } else {
+          current.push(entry);
+        }
+      }
+    }
+    if (current.length >= 3) nights.push(current);
+
+    return nights.map(night => {
+      const segments: { phase: 'awake' | 'rem' | 'core' | 'deep'; startTime: Date; endTime: Date; durationMin: number }[] = [];
+      for (let i = 0; i < night.length; i++) {
+        const start = night[i].parsed;
+        const end = i < night.length - 1
+          ? night[i + 1].parsed
+          : new Date(start.getTime() + 5 * 60 * 1000);
+        segments.push({
+          phase: night[i].value.toLowerCase() as 'awake' | 'rem' | 'core' | 'deep',
+          startTime: start,
+          endTime: end,
+          durationMin: (end.getTime() - start.getTime()) / (1000 * 60),
+        });
+      }
+
+      const nightStart = night[0].parsed;
+      const nightEnd = segments[segments.length - 1].endTime;
+      const asleepMin = segments
+        .filter(s => s.phase !== 'awake')
+        .reduce((s, seg) => s + seg.durationMin, 0);
+
+      const phaseMin = { awake: 0, rem: 0, core: 0, deep: 0 };
+      for (const seg of segments) phaseMin[seg.phase] += seg.durationMin;
+
+      return {
+        date: format(nightStart, 'yyyy-MM-dd'),
+        label: format(nightStart, 'EEE, d MMM'),
+        nightStart,
+        nightEnd,
+        asleepMin,
+        phaseMin,
+        segments,
+      };
+    }).reverse();
   }, [entries]);
 
-  // Aggregate heart rate by day (average)
+  const hasSleep = types.has('sleep') && sleepNights.length > 0;
+  const currentNight = hasSleep ? sleepNights[Math.min(nightIdx, sleepNights.length - 1)] : null;
+
+  // ── HR data ──
   const dailyHR = useMemo(() => {
     const hrEntries = entries.filter(e => e.type === 'heart_rate_bpm');
     if (hrEntries.length === 0) return [];
-    const map = new Map<string, { sum: number; count: number; min: number; max: number }>();
+    const map = new Map<string, { sum: number; count: number }>();
     for (const e of hrEntries) {
       const date = format(parseHealthDate(e.start_date), 'yyyy-MM-dd');
       const val = parseFloat(e.value) || 0;
       const prev = map.get(date);
-      if (prev) {
-        prev.sum += val;
-        prev.count += 1;
-        prev.min = Math.min(prev.min, val);
-        prev.max = Math.max(prev.max, val);
-      } else {
-        map.set(date, { sum: val, count: 1, min: val, max: val });
-      }
+      if (prev) { prev.sum += val; prev.count += 1; }
+      else map.set(date, { sum: val, count: 1 });
     }
     return Array.from(map.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([date, { sum, count, min, max }]) => ({
-        date: date.slice(5),
-        avg: Math.round(sum / count),
-        min: Math.round(min),
-        max: Math.round(max),
-      }));
+      .map(([date, { sum, count }]) => ({ date: date.slice(5), avg: Math.round(sum / count) }));
   }, [entries]);
 
-  // Aggregate HRV by day
+  const allHrValues = useMemo(() =>
+    entries.filter(e => e.type === 'heart_rate_bpm').map(e => parseFloat(e.value)).filter(v => !isNaN(v)),
+    [entries]
+  );
+  const hasHR = types.has('heart_rate_bpm') && dailyHR.length > 0;
+  const avgHr = allHrValues.length > 0 ? Math.round(allHrValues.reduce((s, v) => s + v, 0) / allHrValues.length) : 0;
+  const minHr = allHrValues.length > 0 ? Math.round(Math.min(...allHrValues)) : 0;
+  const maxHr = allHrValues.length > 0 ? Math.round(Math.max(...allHrValues)) : 0;
+
+  // ── HRV data ──
   const dailyHRV = useMemo(() => {
     const hrvEntries = entries.filter(e => e.type === 'hrv_ms');
     if (hrvEntries.length === 0) return [];
@@ -555,8 +661,10 @@ function AppleHealthSection({ entries }: { entries: AppleHealthEntry[] }) {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([date, { sum, count }]) => ({ date: date.slice(5), hrv: Math.round(sum / count) }));
   }, [entries]);
+  const hasHRV = types.has('hrv_ms') && dailyHRV.length > 0;
+  const avgHRV = hasHRV ? Math.round(dailyHRV.reduce((s, d) => s + d.hrv, 0) / dailyHRV.length) : 0;
 
-  // Aggregate distance by day
+  // ── Distance data ──
   const dailyDistance = useMemo(() => {
     const distEntries = entries.filter(e => e.type === 'walking_running_distance');
     if (distEntries.length === 0) return [];
@@ -569,76 +677,144 @@ function AppleHealthSection({ entries }: { entries: AppleHealthEntry[] }) {
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([date, dist]) => ({ date: date.slice(5), km: Math.round(dist * 100) / 100 }));
   }, [entries]);
-
-  // Sleep phases count per day
-  const dailySleep = useMemo(() => {
-    const sleepEntries = entries.filter(e => e.type === 'sleep');
-    if (sleepEntries.length === 0) return [];
-    const map = new Map<string, { core: number; rem: number; deep: number; awake: number }>();
-    for (const e of sleepEntries) {
-      const date = format(parseHealthDate(e.start_date), 'yyyy-MM-dd');
-      const prev = map.get(date) || { core: 0, rem: 0, deep: 0, awake: 0 };
-      const phase = e.value.toLowerCase();
-      if (phase === 'core') prev.core += 1;
-      else if (phase === 'rem') prev.rem += 1;
-      else if (phase === 'deep') prev.deep += 1;
-      else if (phase === 'awake') prev.awake += 1;
-      map.set(date, prev);
-    }
-    return Array.from(map.entries())
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([date, phases]) => ({ date: date.slice(5), ...phases }));
-  }, [entries]);
-
-  const hasSteps = types.has('steps') && dailySteps.length > 0;
-  const hasHR = types.has('heart_rate_bpm') && dailyHR.length > 0;
-  const hasHRV = types.has('hrv_ms') && dailyHRV.length > 0;
   const hasDistance = types.has('walking_running_distance') && dailyDistance.length > 0;
-  const hasSleep = types.has('sleep') && dailySleep.length > 0;
-
-  // KPIs
-  const avgSteps = hasSteps ? Math.round(dailySteps.reduce((s, d) => s + d.steps, 0) / dailySteps.length) : 0;
-
-  const allHrValues = entries.filter(e => e.type === 'heart_rate_bpm').map(e => parseFloat(e.value)).filter(v => !isNaN(v));
-  const avgHr = allHrValues.length > 0 ? Math.round(allHrValues.reduce((s, v) => s + v, 0) / allHrValues.length) : 0;
-  const minHr = allHrValues.length > 0 ? Math.round(Math.min(...allHrValues)) : 0;
-  const maxHr = allHrValues.length > 0 ? Math.round(Math.max(...allHrValues)) : 0;
-
-  const avgHRV = hasHRV ? Math.round(dailyHRV.reduce((s, d) => s + d.hrv, 0) / dailyHRV.length) : 0;
   const avgDist = hasDistance ? Math.round(dailyDistance.reduce((s, d) => s + d.km, 0) / dailyDistance.length * 100) / 100 : 0;
-
-  const chartTooltipStyle = { backgroundColor: '#0F0F0F', border: '1px solid #292929', borderRadius: 6, fontSize: 12 };
 
   return (
     <section className="space-y-2">
       <h2 className="text-sm font-medium text-muted-foreground">apple health</h2>
 
-      {/* Steps */}
+      {/* ── Steps ── */}
       {hasSteps && (
-        <div className="grid grid-cols-[auto_1fr] gap-2">
-          <Card className="flex items-center">
-            <CardContent className="p-4">
-              <Footprints className="h-4 w-4 text-[#2DCAEF] mb-1" />
-              <p className="text-2xl font-bold font-mono">{avgSteps.toLocaleString()}</p>
-              <p className="text-[10px] text-muted-foreground">avg/day</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-3 pr-2">
-              <ResponsiveContainer width="100%" height={80}>
-                <BarChart data={dailySteps} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
-                  <XAxis dataKey="date" tick={{ fill: '#d4d4d4', fontSize: 9 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                  <YAxis tick={{ fill: '#d4d4d4', fontSize: 9 }} tickLine={false} axisLine={false} />
-                  <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: '#d4d4d4' }} formatter={(v: number | undefined) => [(v ?? 0).toLocaleString(), 'steps']} />
-                  <Bar dataKey="steps" fill="#2DCAEF" radius={[2, 2, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Footprints className="h-4 w-4 text-[#2DCAEF]" />
+                <span className="text-sm font-medium">steps</span>
+              </div>
+              <div className="flex rounded-md border border-[#292929] overflow-hidden">
+                {(['D', 'W', 'M'] as const).map(v => (
+                  <button
+                    key={v}
+                    onClick={() => { setStepsView(v); setDayOffset(0); }}
+                    className={`px-2.5 py-1 text-xs transition-colors ${stepsView === v ? 'bg-[#2DCAEF] text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {stepsView === 'D' && selectedDay && (
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setDayOffset(Math.min(dayOffset + 1, sortedStepDays.length - 1))}
+                  className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  disabled={dayOffset >= sortedStepDays.length - 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-xs text-muted-foreground">{format(new Date(selectedDay.date + 'T12:00:00'), 'EEE, d MMM')}</span>
+                <button
+                  onClick={() => setDayOffset(Math.max(0, dayOffset - 1))}
+                  className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  disabled={dayOffset === 0}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+
+            <div>
+              <p className="text-3xl font-bold font-mono">{stepsKPI.toLocaleString()}</p>
+              <p className="text-[10px] text-muted-foreground">{stepsKPILabel}</p>
+            </div>
+
+            <ResponsiveContainer width="100%" height={140}>
+              <BarChart data={stepsChart} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: '#d4d4d4', fontSize: 9 }}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={stepsView === 'D' ? 5 : 'preserveStartEnd'}
+                />
+                <YAxis tick={{ fill: '#d4d4d4', fontSize: 9 }} tickLine={false} axisLine={false} />
+                <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: '#d4d4d4' }} formatter={(v: number | undefined) => [(v ?? 0).toLocaleString(), 'steps']} />
+                <Bar dataKey="steps" fill="#2DCAEF" radius={[2, 2, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Heart Rate */}
+      {/* ── Sleep ── */}
+      {hasSleep && currentNight && (
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Moon className="h-4 w-4 text-[#A78BFA]" />
+                <span className="text-sm font-medium">sleep</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={() => setNightIdx(Math.min(nightIdx + 1, sleepNights.length - 1))}
+                className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                disabled={nightIdx >= sleepNights.length - 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-xs text-muted-foreground">{currentNight.label}</span>
+              <button
+                onClick={() => setNightIdx(Math.max(0, nightIdx - 1))}
+                className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                disabled={nightIdx === 0}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div>
+              <p className="text-[10px] text-muted-foreground">time asleep</p>
+              <p className="text-2xl font-bold font-mono">
+                {Math.floor(currentNight.asleepMin / 60)}h {Math.round(currentNight.asleepMin % 60)}min
+              </p>
+            </div>
+
+            <SleepStageChart
+              segments={currentNight.segments}
+              nightStart={currentNight.nightStart}
+              nightEnd={currentNight.nightEnd}
+            />
+
+            <div className="grid grid-cols-4 gap-1">
+              {([
+                { key: 'deep', label: 'Deep', color: '#3B82F6' },
+                { key: 'core', label: 'Core', color: '#60A5FA' },
+                { key: 'rem', label: 'REM', color: '#A78BFA' },
+                { key: 'awake', label: 'Awake', color: '#F87171' },
+              ] as const).map(({ key, label, color }) => {
+                const mins = currentNight.phaseMin[key];
+                return (
+                  <div key={key} className="text-center">
+                    <div className="w-2 h-2 rounded-sm mx-auto mb-1" style={{ backgroundColor: color }} />
+                    <p className="text-xs font-mono">
+                      {mins >= 60 ? `${Math.floor(mins / 60)}h ${Math.round(mins % 60)}m` : `${Math.round(mins)}m`}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground">{label}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Heart Rate ── */}
       {hasHR && (
         <>
           <div className="grid grid-cols-3 gap-2">
@@ -679,7 +855,7 @@ function AppleHealthSection({ entries }: { entries: AppleHealthEntry[] }) {
         </>
       )}
 
-      {/* HRV */}
+      {/* ── HRV ── */}
       {hasHRV && (
         <>
           <Card>
@@ -709,36 +885,7 @@ function AppleHealthSection({ entries }: { entries: AppleHealthEntry[] }) {
         </>
       )}
 
-      {/* Sleep */}
-      {hasSleep && (
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Moon className="h-4 w-4 text-[#A78BFA]" />
-              <p className="text-xs text-muted-foreground">sleep phases</p>
-            </div>
-            <ResponsiveContainer width="100%" height={140}>
-              <BarChart data={dailySleep} margin={{ top: 4, right: 0, left: -24, bottom: 0 }}>
-                <XAxis dataKey="date" tick={{ fill: '#d4d4d4', fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-                <YAxis tick={{ fill: '#d4d4d4', fontSize: 10 }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={chartTooltipStyle} labelStyle={{ color: '#d4d4d4' }} />
-                <Bar dataKey="deep" stackId="sleep" fill="#3B82F6" name="Deep" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="core" stackId="sleep" fill="#60A5FA" name="Core" />
-                <Bar dataKey="rem" stackId="sleep" fill="#A78BFA" name="REM" />
-                <Bar dataKey="awake" stackId="sleep" fill="#F87171" name="Awake" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="flex justify-center gap-4 mt-2">
-              <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><span className="w-2 h-2 rounded-sm bg-[#3B82F6]" />Deep</span>
-              <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><span className="w-2 h-2 rounded-sm bg-[#60A5FA]" />Core</span>
-              <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><span className="w-2 h-2 rounded-sm bg-[#A78BFA]" />REM</span>
-              <span className="flex items-center gap-1 text-[10px] text-muted-foreground"><span className="w-2 h-2 rounded-sm bg-[#F87171]" />Awake</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Distance */}
+      {/* ── Distance ── */}
       {hasDistance && (
         <>
           <Card>
@@ -768,6 +915,59 @@ function AppleHealthSection({ entries }: { entries: AppleHealthEntry[] }) {
         </>
       )}
     </section>
+  );
+}
+
+function SleepStageChart({ segments, nightStart, nightEnd }: {
+  segments: Array<{ phase: string; startTime: Date; endTime: Date; durationMin: number }>;
+  nightStart: Date;
+  nightEnd: Date;
+}) {
+  const totalMs = nightEnd.getTime() - nightStart.getTime();
+  if (totalMs <= 0) return null;
+
+  const phaseColors: Record<string, string> = {
+    awake: '#F87171', rem: '#A78BFA', core: '#60A5FA', deep: '#3B82F6',
+  };
+  const phases = ['awake', 'rem', 'core', 'deep'] as const;
+
+  return (
+    <div>
+      <div className="flex gap-2">
+        <div className="flex flex-col justify-around text-[9px] text-muted-foreground shrink-0 w-10 py-0.5">
+          {phases.map(p => (
+            <span key={p}>{p === 'awake' ? 'Awake' : p === 'rem' ? 'REM' : p.charAt(0).toUpperCase() + p.slice(1)}</span>
+          ))}
+        </div>
+        <div className="flex-1">
+          {phases.map(phase => (
+            <div key={phase} className="relative h-6">
+              {segments
+                .filter(s => s.phase === phase)
+                .map((seg, i) => {
+                  const left = ((seg.startTime.getTime() - nightStart.getTime()) / totalMs) * 100;
+                  const width = ((seg.endTime.getTime() - seg.startTime.getTime()) / totalMs) * 100;
+                  return (
+                    <div
+                      key={i}
+                      className="absolute top-0.5 bottom-0.5 rounded-[2px]"
+                      style={{
+                        left: `${left}%`,
+                        width: `${Math.max(width, 0.3)}%`,
+                        backgroundColor: phaseColors[phase],
+                      }}
+                    />
+                  );
+                })}
+            </div>
+          ))}
+          <div className="flex justify-between text-[9px] text-muted-foreground mt-1">
+            <span>{format(nightStart, 'HH:mm')}</span>
+            <span>{format(nightEnd, 'HH:mm')}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
