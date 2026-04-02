@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from './supabase';
-import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship, DailyFoodAggregate, GarminHealthEntry, AppleHealthEntry, CreditCardTransaction, MonthlyBudget } from './types';
+import type { Profile, FoodEntry, WeightEntry, Workout, WorkoutSet, Friendship, DailyFoodAggregate, GarminHealthEntry, AppleHealthEntry, CreditCardTransaction, MonthlyBudget, ManualExpense } from './types';
 import { format } from 'date-fns';
 
 export function useProfile() {
@@ -592,4 +592,82 @@ export function useMonthlyBudget(month: string) {
   useEffect(() => { load(); }, [month]);
 
   return { budget, loading, saveBudget };
+}
+
+export function useManualExpenses(date: string) {
+  const [expenses, setExpenses] = useState<ManualExpense[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+
+    const { data } = await supabase
+      .from('manual_expenses')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('date', date)
+      .order('created_at', { ascending: true });
+
+    setExpenses(data || []);
+    setLoading(false);
+  }
+
+  async function addExpense(amount: number, description: string | null) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('manual_expenses')
+      .insert({ user_id: user.id, date, amount, description })
+      .select()
+      .single();
+
+    if (!error && data) {
+      setExpenses(prev => [...prev, data]);
+    }
+    return { error };
+  }
+
+  async function removeExpense(id: string) {
+    const { error } = await supabase
+      .from('manual_expenses')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      setExpenses(prev => prev.filter(e => e.id !== id));
+    }
+  }
+
+  useEffect(() => { load(); }, [date]);
+
+  return { expenses, loading, addExpense, removeExpense, total: expenses.reduce((s, e) => s + e.amount, 0) };
+}
+
+export function useManualExpensesRange(startDate: string, endDate: string) {
+  const [expenses, setExpenses] = useState<ManualExpense[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoading(false); return; }
+
+    const { data } = await supabase
+      .from('manual_expenses')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .order('date', { ascending: true });
+
+    setExpenses(data || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, [startDate, endDate]);
+
+  return { expenses, loading, refresh: load };
 }

@@ -269,6 +269,15 @@ export interface MonthlyBudget {
   budget_amount: number;
 }
 
+export interface ManualExpense {
+  id: string;
+  user_id: string;
+  date: string;
+  amount: number;
+  description: string | null;
+  created_at: string;
+}
+
 export const SPENDING_CATEGORIES: Record<string, { label: string; color: string }> = {
   transport: { label: 'Transport', color: '#F59E0B' },
   dining: { label: 'Dining & Bars', color: '#EF4444' },

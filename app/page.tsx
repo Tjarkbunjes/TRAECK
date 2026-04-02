@@ -3,11 +3,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { format, startOfWeek, addDays, subDays, subWeeks, isSameWeek } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile, useGarminData, useTodaySteps } from '@/lib/hooks';
+import { useAuth, useFoodEntries, useWeightEntries, useWorkouts, useProfile, useGarminData, useTodaySteps, useManualExpenses } from '@/lib/hooks';
 import { MacroRings } from '@/components/MacroRings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight, NotebookPen, Send, Footprints, Loader2 } from 'lucide-react';
+import { Dumbbell, Scale, Utensils, TrendingUp, User, Plus, ChevronLeft, ChevronRight, NotebookPen, Send, Footprints, Loader2, Euro, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,6 +28,7 @@ export default function HomePage() {
   const { entries: garminEntries } = useGarminData(1);
   const todayGarmin = garminEntries.find(e => e.date === today) ?? null;
   const { steps: todaySteps } = useTodaySteps();
+  const { expenses: manualExpenses, total: manualTotal, addExpense, removeExpense } = useManualExpenses(today);
   const [weekOffset, setWeekOffset] = useState(0);
   const [weeklyFood, setWeeklyFood] = useState<Map<number, number>>(new Map());
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Map<number, string>>(new Map());
@@ -39,8 +40,9 @@ export default function HomePage() {
   const [devNote, setDevNote] = useState('');
   const [sendingNote, setSendingNote] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [dailyNote, setDailyNote] = useState('');
-  const [noteSaved, setNoteSaved] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState('');
+  const [expenseDesc, setExpenseDesc] = useState('');
+  const [savingExpense, setSavingExpense] = useState(false);
   const pullStartY = useRef(0);
   const yesterday = format(subDays(new Date(), 1), 'yyyy-MM-dd');
 
@@ -49,29 +51,18 @@ export default function HomePage() {
     window.location.reload();
   }, []);
 
-  // Load today's note
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('journal_entries')
-      .select('note')
-      .eq('user_id', user.id)
-      .eq('date', today)
-      .maybeSingle()
-      .then(({ data }) => {
-        const n = data?.note || '';
-        setDailyNote(n);
-        setNoteSaved(n);
-      });
-  }, [user, today]);
-
-  async function saveNote() {
-    if (!user || dailyNote === noteSaved) return;
-    await supabase.from('journal_entries').upsert(
-      { user_id: user.id, date: today, note: dailyNote || null },
-      { onConflict: 'user_id,date' }
-    );
-    setNoteSaved(dailyNote);
+  async function handleAddExpense() {
+    const val = parseFloat(expenseAmount.replace(',', '.'));
+    if (isNaN(val) || val <= 0) return;
+    setSavingExpense(true);
+    const result = await addExpense(val, expenseDesc.trim() || null);
+    if (result?.error) {
+      toast.error('failed to save expense.');
+    } else {
+      setExpenseAmount('');
+      setExpenseDesc('');
+    }
+    setSavingExpense(false);
   }
 
   useEffect(() => {
@@ -252,16 +243,66 @@ export default function HomePage() {
         </Card>
       )}
 
-      {/* Quick Note */}
-      <input
-        type="text"
-        placeholder="note for today..."
-        value={dailyNote}
-        onChange={(e) => setDailyNote(e.target.value)}
-        onBlur={saveNote}
-        onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-        className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#444]"
-      />
+      {/* Quick Expense */}
+      <Card>
+        <CardContent className="p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">today&apos;s spending</p>
+            <p className="text-sm font-bold font-mono">{manualTotal.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">EUR</span></p>
+          </div>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Euro className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="0.00"
+                value={expenseAmount}
+                onChange={(e) => setExpenseAmount(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddExpense()}
+                className="w-full bg-[#1E1E1E] border border-[#292929] rounded-lg pl-8 pr-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#444]"
+              />
+            </div>
+            <input
+              type="text"
+              placeholder="what for?"
+              value={expenseDesc}
+              onChange={(e) => setExpenseDesc(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddExpense()}
+              className="flex-1 bg-[#1E1E1E] border border-[#292929] rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#444]"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="shrink-0 h-9 w-9"
+              onClick={handleAddExpense}
+              disabled={!expenseAmount || savingExpense}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          {manualExpenses.length > 0 && (
+            <div className="space-y-1 pt-1">
+              {manualExpenses.map((exp) => (
+                <div key={exp.id} className="flex items-center justify-between py-1 px-1 rounded hover:bg-[#1E1E1E] group">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-sm font-mono">{exp.amount.toFixed(2)}</span>
+                    {exp.description && (
+                      <span className="text-xs text-muted-foreground truncate">{exp.description}</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => removeExpense(exp.id)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground p-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Garmin Intraday HR */}
       {todayGarmin?.hr_values && todayGarmin.hr_values.length > 0 && (() => {

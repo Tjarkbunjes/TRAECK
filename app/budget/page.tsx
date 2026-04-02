@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { format, subMonths, addMonths, parseISO, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { useAuth, useTransactions, useMonthlyBudget } from '@/lib/hooks';
+import { useAuth, useTransactions, useMonthlyBudget, useManualExpensesRange } from '@/lib/hooks';
 import { supabase } from '@/lib/supabase';
 import { SPENDING_CATEGORIES } from '@/lib/types';
 import type { CreditCardTransaction } from '@/lib/types';
@@ -111,6 +111,11 @@ export default function BudgetPage() {
   const { transactions, loading: txLoading, refresh } = useTransactions(month);
   const { budget, loading: budgetLoading, saveBudget } = useMonthlyBudget(month);
 
+  const manualStartDate = `${month}-01`;
+  const [mY, mM] = month.split('-').map(Number);
+  const manualEndDate = format(new Date(mY, mM, 0), 'yyyy-MM-dd');
+  const { expenses: manualExpenses, loading: manualLoading } = useManualExpensesRange(manualStartDate, manualEndDate);
+
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetInput, setBudgetInput] = useState('');
   const [spendingView, setSpendingView] = useState<SpendingView>('D');
@@ -143,9 +148,14 @@ export default function BudgetPage() {
   // Only expenses (positive amounts = expenses stored as absolute values)
   const expenses = useMemo(() => transactions.filter(t => t.amount > 0), [transactions]);
 
+  const manualTotal = useMemo(
+    () => manualExpenses.reduce((s, e) => s + e.amount, 0),
+    [manualExpenses]
+  );
+
   const totalSpent = useMemo(
-    () => expenses.reduce((s, t) => s + t.amount, 0),
-    [expenses]
+    () => expenses.reduce((s, t) => s + t.amount, 0) + manualTotal,
+    [expenses, manualTotal]
   );
 
   const budgetAmount = budget?.budget_amount ?? 0;
@@ -158,19 +168,27 @@ export default function BudgetPage() {
 
   const dailySpending = useMemo(() => {
     const map = new Map<string, number>();
+    const manualMap = new Map<string, number>();
     for (const t of expenses) {
       const day = t.transaction_date;
       map.set(day, (map.get(day) || 0) + t.amount);
     }
+    for (const e of manualExpenses) {
+      manualMap.set(e.date, (manualMap.get(e.date) || 0) + e.amount);
+    }
     return Array.from({ length: daysInMonth }, (_, i) => {
       const day = format(new Date(monthDate.getFullYear(), monthDate.getMonth(), i + 1), 'yyyy-MM-dd');
+      const cardAmount = Math.round((map.get(day) || 0) * 100) / 100;
+      const manualAmount = Math.round((manualMap.get(day) || 0) * 100) / 100;
       return {
         label: String(i + 1),
         date: day,
-        amount: Math.round((map.get(day) || 0) * 100) / 100,
+        amount: cardAmount + manualAmount,
+        cardAmount,
+        manualAmount,
       };
     });
-  }, [expenses, monthDate, daysInMonth]);
+  }, [expenses, manualExpenses, monthDate, daysInMonth]);
 
   // ── Weekly spending data ──
   const weeklySpending = useMemo(() => {
@@ -489,13 +507,13 @@ export default function BudgetPage() {
         </div>
       </div>
 
-      {(txLoading || budgetLoading) && (
+      {(txLoading || budgetLoading || manualLoading) && (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       )}
 
-      {!txLoading && !budgetLoading && (
+      {!txLoading && !budgetLoading && !manualLoading && (
         <>
           {/* Budget Overview */}
           <Card>
@@ -710,6 +728,51 @@ export default function BudgetPage() {
                     </div>
                   );
                 })}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Manual Expenses Overview */}
+          {manualExpenses.length > 0 && (
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">hand-tracked spending</p>
+                  <p className="text-sm font-bold font-mono">{manualTotal.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">EUR</span></p>
+                </div>
+                {(() => {
+                  const byDay = new Map<string, { total: number; items: typeof manualExpenses }>();
+                  for (const e of manualExpenses) {
+                    const existing = byDay.get(e.date);
+                    if (existing) {
+                      existing.total += e.amount;
+                      existing.items.push(e);
+                    } else {
+                      byDay.set(e.date, { total: e.amount, items: [e] });
+                    }
+                  }
+                  const days = Array.from(byDay.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+                  return (
+                    <div className="space-y-2">
+                      {days.map(([date, { total, items }]) => (
+                        <div key={date} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium">{format(parseISO(date), 'dd.MM')}</span>
+                            <span className="text-xs font-mono">{total.toFixed(2)} EUR</span>
+                          </div>
+                          <div className="pl-2 space-y-0.5">
+                            {items.map((item) => (
+                              <div key={item.id} className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span className="truncate">{item.description || '–'}</span>
+                                <span className="font-mono shrink-0 ml-2">{item.amount.toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </CardContent>
             </Card>
           )}
