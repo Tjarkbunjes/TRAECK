@@ -28,7 +28,9 @@ export default function HomePage() {
   const { entries: garminEntries } = useGarminData(1);
   const todayGarmin = garminEntries.find(e => e.date === today) ?? null;
   const { steps: todaySteps } = useTodaySteps();
-  const { expenses: manualExpenses, total: manualTotal, addExpense, removeExpense } = useManualExpenses(today);
+  const [expenseDate, setExpenseDate] = useState(today);
+  const { expenses: manualExpenses, total: manualTotal, addExpense, removeExpense } = useManualExpenses(expenseDate);
+  const isExpenseToday = expenseDate === today;
   const [weekOffset, setWeekOffset] = useState(0);
   const [weeklyFood, setWeeklyFood] = useState<Map<number, number>>(new Map());
   const [weeklyWorkouts, setWeeklyWorkouts] = useState<Map<number, string>>(new Map());
@@ -247,11 +249,28 @@ export default function HomePage() {
       <Card>
         <CardContent className="p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">today&apos;s spending</p>
+            <div className="flex items-center gap-1">
+              <button onClick={() => setExpenseDate(format(subDays(new Date(expenseDate + 'T12:00:00'), 1), 'yyyy-MM-dd'))} className="p-0.5 text-muted-foreground hover:text-foreground">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setExpenseDate(today)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                {isExpenseToday ? 'today' : format(new Date(expenseDate + 'T12:00:00'), 'dd.MM.yyyy')}
+              </button>
+              <button
+                onClick={() => setExpenseDate(format(addDays(new Date(expenseDate + 'T12:00:00'), 1), 'yyyy-MM-dd'))}
+                disabled={isExpenseToday}
+                className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
             <p className="text-sm font-bold font-mono">{manualTotal.toFixed(2)} <span className="text-xs font-normal text-muted-foreground">EUR</span></p>
           </div>
           <div className="flex gap-2">
-            <div className="relative flex-1">
+            <div className="relative" style={{ width: '5.5rem' }}>
               <Euro className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <input
                 type="text"
@@ -260,16 +279,16 @@ export default function HomePage() {
                 value={expenseAmount}
                 onChange={(e) => setExpenseAmount(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddExpense()}
-                className="w-full bg-[#1E1E1E] border border-[#292929] rounded-lg pl-8 pr-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#444]"
+                className="w-full bg-[#1E1E1E] border border-[#292929] rounded-lg pl-8 pr-2 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#444]"
               />
             </div>
             <input
               type="text"
-              placeholder="what for?"
+              placeholder="optional note"
               value={expenseDesc}
               onChange={(e) => setExpenseDesc(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddExpense()}
-              className="flex-1 bg-[#1E1E1E] border border-[#292929] rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#444]"
+              className="flex-1 min-w-0 bg-[#1E1E1E] border border-[#292929] rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-[#444]"
             />
             <Button
               variant="outline"
