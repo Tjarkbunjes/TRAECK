@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Utensils, Dumbbell, BarChart3, Wallet } from 'lucide-react';
+import { Home, Utensils, Dumbbell, BarChart3, Wallet, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { href: '/workout', label: 'workout', icon: Dumbbell },
   { href: '/analytics', label: 'analytics', icon: BarChart3 },
   { href: '/budget', label: 'budget', icon: Wallet },
+  { href: '/cards', label: 'karten', icon: Layers },
 ];
 
 export function BottomNav() {
