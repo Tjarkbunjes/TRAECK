@@ -24,15 +24,19 @@ export interface Deck {
   daily_review_limit: number;
   created_at: string;
   updated_at: string;
+  /** soft delete (since migration_cards_v2) — deleted decks stay synced */
+  deleted_at: string | null;
 }
+
+/** schema cards: ask every step on its own or the schema as a whole */
+export type SchemaMode = 'whole' | 'steps';
 
 /** Per-deck FSRS overrides. Anything left undefined falls back to the global setting. */
 export interface FsrsParams {
   request_retention?: number;
   maximum_interval?: number;
   w?: number[];
-  /** schema cards: ask every step on its own or the schema as a whole */
-  schema_mode?: 'steps' | 'whole';
+  schema_mode?: SchemaMode;
 }
 
 // ── card fields per type ─────────────────────────────────────────────────────

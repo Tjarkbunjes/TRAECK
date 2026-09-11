@@ -7,7 +7,7 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['features/**/*.test.ts'],
+    include: ['features/**/*.test.{ts,tsx}'],
   },
   resolve: {
     alias: { '@': root },
