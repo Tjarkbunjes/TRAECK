@@ -40,10 +40,11 @@ Der Paketname in `package.json` ist historisch noch `fittrack` — Produktname i
 
 | Was | Wo |
 |---|---|
-| **Routen** | `app/` — Next.js App Router, eine `page.tsx` pro Route. Bestehend: `/` (Dashboard), `/food` (+ `add`, `ai`, `meals`, `scan`), `/workout` (+ `active`, `edit`, `templates`), `/analytics`, `/budget`, `/friends`, `/profile`, `/auth/{login,signup,callback}`, `/cards` (+ `learn`, `decks`, `c`, `new`, `stats`, `settings`, `import`). Root-Layout: `app/layout.tsx`. Wegen `output: "export"` keine dynamischen Segmente — Ids laufen als `?id=` (`/food/add?edit=`, `/cards/decks?id=`). |
-| **Komponenten** | `components/` — Feature-Komponenten flach im Ordner (`MacroRings.tsx`, `WorkoutSetRow.tsx`, …); `components/ui/` = generierte shadcn/ui-Primitives (nicht handoptimieren, per shadcn-CLI regenerieren); `components/muscle-svg/` = SVG-Body-Maps. Karten-Komponenten liegen **nicht** hier, sondern in `features/cards/components/`. |
+| **Routen** | `app/` — Next.js App Router, eine `page.tsx` pro Route. Bestehend: `/` (Karten-Dashboard; zeigt `components/FitnessHome.tsx`, wenn das Fitness-Modul eingeschaltet ist), `/food` (+ `add`, `ai`, `meals`, `scan`), `/workout` (+ `active`, `edit`, `templates`), `/analytics`, `/budget`, `/friends`, `/profile`, `/auth/{login,signup,callback}`, `/cards` (+ `learn`, `decks`, `c`, `new`, `stats`, `settings`, `import`). Root-Layout: `app/layout.tsx`. Wegen `output: "export"` keine dynamischen Segmente — Ids laufen als `?id=` (`/food/add?edit=`, `/cards/decks?id=`). |
+| **Komponenten** | `components/` — Feature-Komponenten flach im Ordner (`MacroRings.tsx`, `WorkoutSetRow.tsx`, `FitnessHome.tsx` = das frühere `app/page.tsx`, …); `components/ui/` = generierte shadcn/ui-Primitives (nicht handoptimieren, per shadcn-CLI regenerieren); `components/muscle-svg/` = SVG-Body-Maps. Karten-Komponenten liegen **nicht** hier, sondern in `features/cards/components/`. |
 | **Feature-Ordner** | `features/cards/` — der einzige Feature-Ordner; alles Kartenbezogene außer den Seiten in `app/cards/`: `types.ts`, `settings.ts` (+ `useCardsSettings.ts`), `routes.ts`, `repo.ts` (Writes), `sync/` (Worker), `components/`, `scheduler/`, `content/`. Seiten in `app/cards/` sind dünn und importieren von hier. |
 | **Supabase-Client** | `lib/supabase.ts` — ein einziger, global exportierter Browser-Client (`export const supabase`), gespeist aus `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Kein Server-Client. |
+| **Module-Schalter** | `lib/modules.ts` (+ `lib/use-modules.ts`) — `profiles.settings.modules.fitness` (Default `false`). Steuert, ob `components/BottomNav.tsx` die Fitness-Tabs oder die Karten-Tabs (`heute · decks · neu · statistik · mehr`) zeigt und was `/` rendert. Umschalten unter `/cards/settings`. Die Fitness-Routen bleiben immer per URL erreichbar. |
 | **Datenzugriff** | `lib/hooks.ts` — sämtliche Read/Write-Hooks (`useAuth`, `useProfile`, `useFoodEntries`, `useWorkouts`, `useManualExpenses`, …). Zentrale Datei des Projekts (~670 Zeilen). |
 | **Typen** | `lib/types.ts` — Row-Interfaces spiegeln 1:1 die Supabase-Tabellen, plus Label-/Kategorie-Konstanten. |
 | **Dexie-Schema** | `lib/db.ts` — Dexie-DB `FitTrackDB`, aktuell v3: `recentFoods`, `pendingSync` (Outbox), `decks`, `cards`, `card_state` (Compound-Key `[card_id+variant]`), `reviews`, `syncMeta` (Sync-Cursor). Neue Tabellen = neue `db.version(n)`, bestehende Versionen nie editieren. |
@@ -122,14 +123,14 @@ npm install        # Abhängigkeiten
 npm run dev        # next dev — Entwicklungsserver auf :3000
 npm run build      # next build — statischer Export nach out/
 npm run lint       # eslint (Flat Config, eslint.config.mjs)
-npm test           # vitest run — features/**/*.test.ts
+npm test           # vitest run — features/**/*.test.{ts,tsx}, lib/**/*.test.ts
 npm run start      # next start
 npm run build:ios  # next build && cap sync ios
 npm run open:ios   # Xcode öffnen
 npx tsc --noEmit   # Typecheck (kein eigenes npm-Skript)
 ```
 
-**Tests:** Vitest (`vitest.config.ts`, Node-Environment, Alias `@`), nur für `features/**/*.test.ts`. Getestet werden reine Funktionen (Settings-Parser, Merge-Helfer; ab Phase 3 Queue-Builder, FSRS-Wrapper, Markdown-Parser) — keine Komponenten, kein Dexie, kein Supabase. Fitness-Code hat keine Tests. Vor jedem Push: `npm run lint`, `npx tsc --noEmit`, `npm test`.
+**Tests:** Vitest (`vitest.config.ts`, Node-Environment, Alias `@`) für `features/**` und `lib/**`. Getestet werden reine Funktionen (Settings-Parser, Merge-Helfer, Deck-Baum, Varianten/Cloze, Norm-Regex, Module-Resolver) plus Render-Smoke-Tests per `renderToStaticMarkup` (`components.test.tsx`, `markdown.test.tsx`) — kein Dexie, kein Supabase, keine Interaktion. Fitness-Code hat keine Tests. Vor jedem Push: `npm run lint`, `npx tsc --noEmit`, `npm test`.
 
 **Lint-Baseline:** `npm run lint` meldet auf `main` 25 Fehler / 40 Warnungen (alle in Fitness-Dateien, v. a. `react-hooks/set-state-in-effect` in `lib/hooks.ts`). Diese Zahl darf nicht steigen; neue Dateien müssen sauber sein (`npx eslint <pfad>`).
 
@@ -142,7 +143,7 @@ Spaced-Repetition-Karteikarten (Anki-Prinzip, FSRS via `ts-fsrs`) fürs zweite S
 | Phase | Stand | Inhalt |
 |---|---|---|
 | 1 | ✅ gemergt | Migration, Dexie v3, Sync-Worker, Routen-Gerüst, `CardsSettings`, Vitest |
-| 2 | offen | Decks + Karten CRUD, Deck-Baum, Markdown-Editor, alle 5 Kartentypen rendern, Suche/Filter, Soft Delete |
+| 2 | ✅ gemergt | Decks + Karten CRUD, Deck-Baum, Markdown-Editor, alle 5 Kartentypen rendern, Suche/Filter, Soft Delete (`migration_cards_v2.sql`: `decks.deleted_at`) |
 | 3 | offen | Lernmodus: Queue-Builder, `ts-fsrs`-Wrapper, Bewertung, Reviews, Session |
 | 4 | offen | Personalisierung komplett (Settings-Screen, Presets, Gesten, Haptik, Typografie, Accent) |
 | 5 | offen | Content-Pipeline: `content/decks/**/*.md` → `cards:check` / `cards:import`, Import-Wizard |
@@ -150,14 +151,15 @@ Spaced-Repetition-Karteikarten (Anki-Prinzip, FSRS via `ts-fsrs`) fürs zweite S
 | 7 | optional | Claude-API-Route: umformulieren, Schema → Einzelkarten, Cloze-Vorschläge |
 | 8 | offen | Polish: SW-Caching für `/cards`, Light Mode, Desktop-Layout, `.apkg`-Import |
 
-**Fitness-Code wird nicht angefasst.** Das Modul ist additiv: `app/cards/**`, `features/cards/**`, eigene Tabellen. `app/food/**`, `app/workout/**`, `app/analytics/**`, `app/budget/**`, die Hooks in `lib/hooks.ts` und die Fitness-Typen in `lib/types.ts` bleiben unverändert. Gemeinsam genutzt werden nur die neutralen Bausteine: `lib/supabase.ts`, `lib/db.ts` (neue Version anhängen), `components/ui/*`, `lib/utils.ts`, Design-Tokens. Einzige Änderung an Shared-Code bisher: der Eintrag `karten` in `components/BottomNav.tsx`. Gemeinsame Komponenten bei Bedarf nach `features/cards/components/` kopieren und dort anpassen, nicht im Original ändern.
+**Die App ist nach außen die Karteikarten-App.** Fitness ist per Default ausgeblendet (siehe Module-Schalter), der Code bleibt aber vollständig erhalten und wird **nicht angefasst**. Das Modul ist additiv: `app/cards/**`, `features/cards/**`, eigene Tabellen. `app/food/**`, `app/workout/**`, `app/analytics/**`, `app/budget/**`, die Hooks in `lib/hooks.ts` und die Fitness-Typen in `lib/types.ts` bleiben unverändert. Gemeinsam genutzt werden nur die neutralen Bausteine: `lib/supabase.ts`, `lib/db.ts` (neue Version anhängen), `components/ui/*`, `lib/utils.ts`, Design-Tokens. Änderungen an Shared-Code bisher: `components/BottomNav.tsx` (zwei Tab-Sets je nach Modul-Schalter), `app/page.tsx` (Weiche) und der Umzug des Fitness-Dashboards nach `components/FitnessHome.tsx`. Gemeinsame Komponenten bei Bedarf nach `features/cards/components/` kopieren und dort anpassen, nicht im Original ändern.
 
 **Einstellungen liegen unter `profiles.settings.cards`.** Die Spalte `profiles.settings jsonb` existiert seit `migration_cards.sql`. Shape, Defaults und Parser: `features/cards/settings.ts` (`CardsSettings`, `DEFAULT_CARDS_SETTINGS`, `resolveCardsSettings`). Schreiben nur über `useCardsSettings().save()`, das per `withCardsSettings()` ausschließlich den `cards`-Teilbaum ersetzt — nie das gesamte `settings`-Objekt. Neue Optionen: Typ + Default + Parser-Zweig + Test in `settings.test.ts`.
 
 **Datenmodell-Entscheidungen, die bleiben:**
 - `card_state` hat den PK `(card_id, variant)`: `basic`/`schema`/`streitstand` → `fwd`, `reverse` → `fwd` + `rev`, `cloze` → `c1`, `c2`, … `reviews` trägt dieselbe `variant`.
 - `Card` ist auf `type` diskriminiert; `fields` ist je Typ getypt (`features/cards/types.ts`). Kein `any`.
-- `decks` hat noch kein `deleted_at` — harte Deck-Löschungen propagieren per Delta-Sync nicht. Offener Punkt für Phase 2 (`migration_cards_v2.sql`).
+- `decks` und `cards` werden **soft-deleted** (`deleted_at`); `softDeleteDeck()` kaskadiert auf Unterdecks und Karten. Nie hart löschen — das würde per Delta-Sync nicht propagieren.
+- `schema`-Karten: `deck.fsrs_params.schema_mode` (`whole` → Variante `fwd`, `steps` → `s1…sn`). `saveCard()` gleicht `card_state` mit `variantsForCard()` ab.
 
 **Design im Modul:** Repo-Tokens für Flächen (`bg-card`, `border-border`), Modul-Accent als CSS-Variable `--cards-accent` (Default `#3DFBB0`, nur innerhalb von `CardsScreen` gesetzt), Lucide-Icons mit `strokeWidth={1.5}`, Zahlen/Intervalle in `font-mono`, UI-Texte kleingeschrieben und auf Deutsch (`karten`, `lernen`, `fällig`). Ruhig, keine Gamification.
 
